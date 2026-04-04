@@ -10,8 +10,7 @@ class SheetsAPI {
     try {
       const res = await fetch(url);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const text = await res.text();
-      return this._parseCSV(text);
+      return this._parseCSV(await res.text());
     } catch (e) {
       console.error('Erreur lecture:', sheetName, e.message);
       return [];
@@ -20,31 +19,66 @@ class SheetsAPI {
 
   _parseCSV(text) {
     const rows = [];
-    const lines = text.split('\n');
-    for (let line of lines) {
+    for (let line of text.split('\n')) {
       if (!line.trim()) continue;
       const cells = [];
-      let current = '', inQuotes = false;
+      let cur = '', inQ = false;
       for (let i = 0; i < line.length; i++) {
         const ch = line[i];
         if (ch === '"') {
-          if (inQuotes && line[i+1] === '"') { current += '"'; i++; }
-          else inQuotes = !inQuotes;
-        } else if (ch === ',' && !inQuotes) {
-          cells.push(current.trim()); current = '';
-        } else { current += ch; }
+          if (inQ && line[i+1] === '"') { cur += '"'; i++; }
+          else inQ = !inQ;
+        } else if (ch === ',' && !inQ) { cells.push(cur.trim()); cur = ''; }
+        else cur += ch;
       }
-      cells.push(current.trim());
+      cells.push(cur.trim());
       rows.push(cells);
     }
     return rows;
+  }
+
+  // Trouve la ligne d'un titre de section (ex: "CATALOGUE PRODUITS")
+  // Retourne l'index de la ligne d'en-tête (ligne suivante après le titre)
+  _findSection(rows, keyword) {
+    for (let i = 0; i < rows.length; i++) {
+      const cell = (rows[i][0] || '') + (rows[i][1] || '') + (rows[i][2] || '');
+      if (cell.toUpperCase().includes(keyword.toUpperCase())) {
+        return i; // index de la ligne titre
+      }
+    }
+    return -1;
+  }
+
+  // Extrait les lignes de données d'une section
+  // Cherche le titre → saute l'en-tête → lit jusqu'à la prochaine section vide
+  _extractSection(rows, keyword) {
+    const titleIdx = this._findSection(rows, keyword);
+    if (titleIdx === -1) return [];
+
+    // La ligne d'en-tête est juste après le titre
+    const headerIdx = titleIdx + 1;
+    const data = [];
+
+    // Lit les lignes de données jusqu'à une ligne complètement vide
+    for (let i = headerIdx + 1; i < rows.length; i++) {
+      const r = rows[i];
+      // Arrêt si ligne vide ou nouvelle section détectée
+      if (!r || r.every(c => !c || !c.trim())) break;
+      // Arrêt si c'est un titre de section (cellule A contient un emoji ou mot-clé connu)
+      const firstCell = r[0] || '';
+      if (firstCell.includes('PAYS') || firstCell.includes('LIVREUR') ||
+          firstCell.includes('CLOSEUR') || firstCell.includes('CATALOGUE') ||
+          firstCell.includes('PRODUIT') && data.length > 0 && !firstCell.startsWith('PRD')) break;
+      data.push(r);
+    }
+    return data;
   }
 
   async getCommandes() {
     const rows = await this.readSheet('📋 COMMANDES');
     const C = this.cfg.COLS;
     return rows.slice(4)
-      .filter(r => r[C.CLIENT] && r[C.CLIENT] !== '')
+      .filter(r => r[C.CLIENT] && r[C.CLIENT].trim() !== '')
       .map(r => ({
         id: r[C.ID]||'', shopify: r[C.SHOPIFY]||'', date: r[C.DATE]||'',
         client: r[C.CLIENT]||'', tel: r[C.TEL]||'', pays: r[C.PAYS]||'',
@@ -59,53 +93,103 @@ class SheetsAPI {
   async getConfig() {
     const rows = await this.readSheet('⚙️ CONFIGURATION');
 
-    // PRODUITS lignes 6-30 → index 5-29
+    // ── PRODUITS : cherche "CATALOGUE PRODUITS" ──────────────
     const produits = [];
-    for (let i = 5; i <= 29; i++) {
-      const r = rows[i];
-      if (!r || !r[0] || !r[1] || r[0]==='ID Produit') continue;
-      if (!parseFloat(r[4]) && !r[1]) continue;
-      produits.push({ id:r[0], nom:r[1], categorie:r[2]||'', prixAchat:parseFloat(r[3])||0, prixVente:parseFloat(r[4])||0 });
+    const prodTitleIdx = this._findSection(rows, 'CATALOGUE PRODUIT');
+    if (prodTitleIdx !== -1) {
+      // en-tête sur prodTitleIdx+1, données à partir de prodTitleIdx+2
+      for (let i = prodTitleIdx + 2; i < rows.length; i++) {
+        const r = rows[i];
+        if (!r || !r[0] || !r[0].trim()) break;
+        if (!r[0].startsWith('PRD')) break; // plus de produits
+        if (!r[1]) continue;
+        produits.push({
+          id:        r[0].trim(),
+          nom:       r[1].trim(),
+          categorie: r[2] ? r[2].trim() : '',
+          prixAchat: parseFloat(r[3]) || 0,
+          prixVente: parseFloat(r[4]) || 0,
+        });
+      }
     }
 
-    // PAYS & VILLES lignes 33-60 → index 32-59
+    // ── PAYS & VILLES : cherche "PAYS & VILLES" ──────────────
     const paysVilles = [];
-    for (let i = 32; i <= 59; i++) {
-      const r = rows[i];
-      if (!r || !r[1] || !r[2] || r[1]==='Pays') continue;
-      if (r[4] && r[4]!=='O') continue;
-      paysVilles.push({ id:r[0]||'', pays:r[1], ville:r[2], code:r[3]||'' });
+    const paysTitleIdx = this._findSection(rows, 'PAYS');
+    if (paysTitleIdx !== -1) {
+      for (let i = paysTitleIdx + 2; i < rows.length; i++) {
+        const r = rows[i];
+        if (!r || !r[0] || !r[0].trim()) break;
+        if (!r[0].startsWith('PV')) break;
+        if (!r[1] || !r[2]) continue;
+        // Colonne E = Actif (index 4)
+        if (r[4] && r[4].trim() !== 'O') continue;
+        paysVilles.push({
+          id:    r[0].trim(),
+          pays:  r[1].trim(),
+          ville: r[2].trim(),
+          code:  r[3] ? r[3].trim() : '',
+        });
+      }
     }
-    const paysUniques = [...new Set(paysVilles.map(pv=>pv.pays))].filter(Boolean);
+
+    const paysUniques = [...new Set(paysVilles.map(pv => pv.pays))].filter(Boolean);
     const villesParPays = {};
     paysVilles.forEach(pv => {
       if (!villesParPays[pv.pays]) villesParPays[pv.pays] = [];
-      if (pv.ville && !villesParPays[pv.pays].includes(pv.ville)) villesParPays[pv.pays].push(pv.ville);
+      if (!villesParPays[pv.pays].includes(pv.ville)) villesParPays[pv.pays].push(pv.ville);
     });
 
-    // LIVREURS lignes 63-84 → index 62-83
+    // ── LIVREURS : cherche "LIVREURS" ────────────────────────
     const livreurs = [];
-    for (let i = 62; i <= 83; i++) {
-      const r = rows[i];
-      if (!r || !r[0] || !r[1] || r[0]==='ID Livreur') continue;
-      if (r[7] && r[7]!=='O') continue;
-      livreurs.push({ id:r[0], nom:(r[1]+' '+(r[2]||'')).trim(), tel:r[3]||'', pays:r[4]||'', ville:r[5]||'', frais:parseFloat(r[6])||3.5 });
+    const livTitleIdx = this._findSection(rows, 'LIVREUR');
+    if (livTitleIdx !== -1) {
+      for (let i = livTitleIdx + 2; i < rows.length; i++) {
+        const r = rows[i];
+        if (!r || !r[0] || !r[0].trim()) break;
+        if (!r[0].startsWith('LIV')) break;
+        if (!r[1]) continue;
+        // Colonne H = Actif (index 7)
+        if (r[7] && r[7].trim() !== 'O') continue;
+        livreurs.push({
+          id:    r[0].trim(),
+          nom:   (r[1].trim() + ' ' + (r[2] ? r[2].trim() : '')).trim(),
+          tel:   r[3] ? r[3].trim() : '',
+          pays:  r[4] ? r[4].trim() : '',
+          ville: r[5] ? r[5].trim() : '',
+          frais: parseFloat(r[6]) || 3.5,
+        });
+      }
     }
 
-    // CLOSEURS lignes 88-104 → index 87-103
+    // ── CLOSEURS : cherche "CLOSEUR" ─────────────────────────
     const closeurs = [];
-    for (let i = 87; i <= 103; i++) {
-      const r = rows[i];
-      if (!r || !r[0] || !r[1] || r[0]==='ID Closeur') continue;
-      if (r[6] && r[6]!=='O') continue;
-      closeurs.push({ id:r[0], nom:(r[1]+' '+(r[2]||'')).trim(), tel:r[3]||'', email:r[4]||'', commission:parseFloat(r[5])||0.03 });
+    const cloTitleIdx = this._findSection(rows, 'CLOSEUR');
+    if (cloTitleIdx !== -1) {
+      for (let i = cloTitleIdx + 2; i < rows.length; i++) {
+        const r = rows[i];
+        if (!r || !r[0] || !r[0].trim()) break;
+        if (!r[0].startsWith('CLO')) break;
+        if (!r[1]) continue;
+        // Colonne G = Actif (index 6)
+        if (r[6] && r[6].trim() !== 'O') continue;
+        closeurs.push({
+          id:         r[0].trim(),
+          nom:        (r[1].trim() + ' ' + (r[2] ? r[2].trim() : '')).trim(),
+          tel:        r[3] ? r[3].trim() : '',
+          email:      r[4] ? r[4].trim() : '',
+          commission: parseFloat(r[5]) || 0.03,
+        });
+      }
     }
 
+    console.log(`Config chargée: ${produits.length} produits, ${paysVilles.length} villes, ${livreurs.length} livreurs, ${closeurs.length} closeurs`);
     return { produits, paysVilles, paysUniques, villesParPays, livreurs, closeurs };
   }
 
+  // ── ÉCRITURE via Apps Script ──────────────────────────────
   async _post(payload) {
-    const url = (typeof CONFIG!=='undefined' && CONFIG.SCRIPT_URL)
+    const url = (typeof CONFIG !== 'undefined' && CONFIG.SCRIPT_URL)
       ? CONFIG.SCRIPT_URL : localStorage.getItem('CODAFRIK_SCRIPT_URL');
     if (!url) return { success: false, reason: 'no_script' };
     try {
