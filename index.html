@@ -343,6 +343,12 @@ async function loadData() {
     const [cmds, cfg] = await Promise.all([api.getCommandes(), api.getConfig()]);
     orders  = cmds;
     cfgData = cfg;
+    // s'assurer que les propriétés anciennes sont compatibles
+    if (!cfgData.closeurs) cfgData.closeurs = [];
+    if (!cfgData.livreurs) cfgData.livreurs = [];
+    if (!cfgData.produits) cfgData.produits = [];
+    if (!cfgData.paysUniques) cfgData.paysUniques = [];
+    if (!cfgData.villesParPays) cfgData.villesParPays = {};
     setSyncStatus('ok');
   } catch(e) {
     setSyncStatus('error');
@@ -573,48 +579,66 @@ function renderMotifs() {
 
 // ── AJOUTER COMMANDE ───────────────────────────────────────
 function renderAjouter() {
-  const livreurs = cfgData.livreurs.length ? cfgData.livreurs : [];
-  const closeurs = cfgData.closeurs.length ? cfgData.closeurs : [];
-  const produits = cfgData.produits.length ? cfgData.produits : [];
-  const villes   = [...new Set(livreurs.map(l=>l.ville))];
+  const closeurs = cfgData.closeurs && cfgData.closeurs.length ? cfgData.closeurs : [];
+  const produits = cfgData.produits && cfgData.produits.length ? cfgData.produits : [];
+  const paysUniques = cfgData.paysUniques && cfgData.paysUniques.length ? cfgData.paysUniques : ["Sénégal","Côte d'Ivoire","Maroc","Cameroun","Mali"];
+  const premierPays = paysUniques[0] || "Sénégal";
+  const villesInitiales = (cfgData.villesParPays && cfgData.villesParPays[premierPays]) || ["Dakar"];
 
-  return `<div class="card">
+  return `<div class="card" style="max-width:480px">
     <div class="card-header">➕ Nouvelle commande</div>
     <div class="card-body">
-      <div class="form-row"><label>Nom client *</label><input id="n_client" placeholder="Amadou Diop" autocomplete="off"></div>
-      <div class="form-row"><label>Téléphone</label><input id="n_tel" type="tel" placeholder="77 123 4567"></div>
+      <div class="form-row"><label>Nom client *</label><input id="n_client" placeholder="Ex: Amadou Diop" autocomplete="off"></div>
+      <div class="form-row"><label>Téléphone</label><input id="n_tel" type="tel" placeholder="Ex: 77 123 4567"></div>
       <div class="form-row"><label>Produit *</label>
         <select id="n_produit">
-          ${produits.map(p=>`<option value="${p.id}|${p.prixVente}">${p.id} - ${p.nom} ($${p.prixVente})</option>`).join('')}
-          ${!produits.length?'<option>Charge ta config depuis Google Sheets</option>':''}
-        </select></div>
+          ${produits.length
+            ? produits.map(p=>`<option value="${p.id}|${p.prixVente}">${p.nom} — $${p.prixVente}</option>`).join('')
+            : '<option value="PRD001|20">Chargement produits...</option>'}
+        </select>
+      </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
         <div class="form-row"><label>Quantité</label><input id="n_qte" type="number" value="1" min="1"></div>
         <div class="form-row"><label>Source</label>
           <select id="n_source">
             <option>Facebook Ads</option><option>Instagram Ads</option>
             <option>WhatsApp</option><option>Organique</option><option>Bouche à oreille</option>
-          </select></div>
+          </select>
+        </div>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-        <div class="form-row"><label>Pays</label><input id="n_pays" placeholder="Sénégal"></div>
+        <div class="form-row"><label>Pays</label>
+          <select id="n_pays" onchange="updateVillesSelect()">
+            ${paysUniques.map(p=>`<option>${p}</option>`).join('')}
+          </select>
+        </div>
         <div class="form-row"><label>Ville</label>
           <select id="n_ville">
-            ${villes.map(v=>`<option>${v}</option>`).join('')}
-            ${!villes.length?'<option>Dakar</option><option>Abidjan</option><option>Casablanca</option>':''}
-          </select></div>
+            ${villesInitiales.map(v=>`<option>${v}</option>`).join('')}
+          </select>
+        </div>
       </div>
       <div class="form-row"><label>Assigner closeur</label>
         <select id="n_closeur">
           <option value="">— Non assigné —</option>
-          ${closeurs.map(c=>`<option>${c.nom}</option>`).join('')}
-        </select></div>
+          ${closeurs.map(c=>`<option value="${c.nom}">${c.nom}</option>`).join('')}
+        </select>
+      </div>
       <button class="btn btn-primary btn-block" onclick="createOrder()">✓ Créer la commande</button>
       <div id="create-msg" style="margin-top:10px;font-size:13px;color:#27500A;text-align:center"></div>
     </div>
   </div>`;
 }
 
+function updateVillesSelect() {
+  const pays = document.getElementById('n_pays')?.value;
+  const villesSel = document.getElementById('n_ville');
+  if (!villesSel || !pays) return;
+  const villes = (cfgData.villesParPays && cfgData.villesParPays[pays]) || [];
+  villesSel.innerHTML = villes.length
+    ? villes.map(v=>`<option>${v}</option>`).join('')
+    : `<option>${pays}</option>`;
+}
 async function createOrder() {
   const client = $('n_client').value.trim();
   if (!client) { toast('⚠️ Nom client requis'); return; }
