@@ -1,0 +1,1064 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#1A1A2E">
+<title>CodAfrik — Gestion COD</title>
+<style>
+/* ── RESET & BASE ─────────────────────────────────────── */
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html{font-size:14px;height:100%}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;
+  background:#F0F4F8;color:#1A1A2E;min-height:100vh;padding-bottom:60px}
+a{color:#534AB7;text-decoration:none}
+
+/* ── TOP BAR ──────────────────────────────────────────── */
+.topbar{background:#1A1A2E;color:#fff;padding:12px 16px;
+  display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:50}
+.logo{font-weight:600;font-size:16px;letter-spacing:-.3px}
+.logo span{color:#7F77DD}
+.sync-status{margin-left:auto;font-size:11px;display:flex;align-items:center;gap:5px;opacity:.8}
+.sync-dot{width:7px;height:7px;border-radius:50%;background:#3B6D11}
+.sync-dot.syncing{background:#EF9F27;animation:pulse .8s infinite}
+.sync-dot.error{background:#E24B4A}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+/* ── ROLE SWITCHER ────────────────────────────────────── */
+.role-bar{background:#0F0F1E;display:flex;padding:6px;gap:4px;overflow-x:auto}
+.role-btn{flex:1;padding:8px 6px;border-radius:8px;border:none;background:transparent;
+  color:rgba(255,255,255,.5);cursor:pointer;font-size:12px;font-weight:500;
+  white-space:nowrap;transition:all .2s;min-width:80px}
+.role-btn.active{background:#534AB7;color:#fff}
+.role-btn.r-closeur.active{background:#BA7517}
+.role-btn.r-livreur.active{background:#993C1D}
+
+/* ── NAV TABS ─────────────────────────────────────────── */
+.nav{background:#fff;border-bottom:1px solid #E8EAF0;
+  display:flex;overflow-x:auto;-webkit-overflow-scrolling:touch}
+.nav::-webkit-scrollbar{display:none}
+.nav-btn{padding:11px 14px;border:none;background:transparent;
+  color:#888;cursor:pointer;font-size:12px;font-weight:500;
+  border-bottom:2px solid transparent;white-space:nowrap;transition:all .15s}
+.nav-btn.active{color:#534AB7;border-bottom-color:#534AB7}
+.notif-pill{background:#E24B4A;color:#fff;border-radius:9px;
+  font-size:10px;padding:1px 5px;margin-left:3px}
+
+/* ── CONTENT ──────────────────────────────────────────── */
+.content{padding:12px;max-width:700px;margin:0 auto}
+
+/* ── KPI GRID ─────────────────────────────────────────── */
+.kpi-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+.kpi{background:#fff;border-radius:12px;padding:14px 12px;
+  border-top:3px solid #534AB7;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+.kpi-label{font-size:11px;color:#888;margin-bottom:3px}
+.kpi-val{font-size:22px;font-weight:600;color:#1A1A2E;line-height:1}
+.kpi-sub{font-size:11px;color:#aaa;margin-top:3px}
+
+/* ── CARDS ────────────────────────────────────────────── */
+.card{background:#fff;border-radius:12px;overflow:hidden;
+  margin-bottom:10px;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+.card-header{padding:12px 14px;border-bottom:1px solid #F0F0F0;
+  display:flex;align-items:center;gap:8px;font-weight:600;font-size:13px}
+.card-body{padding:14px}
+
+/* ── BADGES ───────────────────────────────────────────── */
+.badge{padding:2px 8px;border-radius:10px;font-size:11px;font-weight:500}
+.status{padding:3px 9px;border-radius:10px;font-size:11px;font-weight:500;white-space:nowrap}
+
+/* ── TABLE ────────────────────────────────────────────── */
+.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table{width:100%;border-collapse:collapse;min-width:500px}
+th{padding:8px 10px;text-align:left;font-size:11px;font-weight:600;
+  color:#888;background:#F8F9FB;border-bottom:1px solid #F0F0F0}
+td{padding:9px 10px;border-bottom:1px solid #F8F8F8;font-size:12px;
+  color:#1A1A2E;vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:active td{background:#F8F9FB}
+
+/* ── BUTTONS ──────────────────────────────────────────── */
+.btn{padding:7px 12px;border-radius:8px;border:1px solid #E0E0E0;
+  background:#fff;cursor:pointer;font-size:12px;color:#555;
+  font-family:inherit;transition:all .15s;display:inline-flex;
+  align-items:center;gap:4px;font-weight:500}
+.btn:active{opacity:.8;transform:scale(.98)}
+.btn-primary{background:#534AB7;border-color:#534AB7;color:#fff}
+.btn-success{background:#EAF3DE;border-color:#C0DD97;color:#27500A}
+.btn-warning{background:#FAEEDA;border-color:#FAC775;color:#633806}
+.btn-danger{background:#FCEBEB;border-color:#F7C1C1;color:#791F1F}
+.btn-sm{padding:4px 9px;font-size:11px;border-radius:6px}
+.btn-block{width:100%;justify-content:center;padding:11px}
+
+/* ── CMD CARDS (closeur/livreur) ──────────────────────── */
+.cmd-card{background:#F8F9FB;border:1px solid #EBEBEB;border-radius:12px;
+  padding:14px;margin-bottom:10px}
+.cmd-card-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px}
+.cmd-id{font-size:11px;color:#888;font-weight:500}
+.cmd-detail{font-size:12px;color:#666;margin-bottom:4px;line-height:1.5}
+.cmd-detail strong{color:#1A1A2E}
+.cmd-amount{background:#fff;border:1px solid #E8E8E8;border-radius:10px;
+  padding:10px 12px;margin:10px 0;display:flex;justify-content:space-between;align-items:center}
+.cod-amount{font-size:28px;font-weight:700;color:#27500A}
+.action-row{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
+.motif-badge{background:#FCEBEB;border-radius:8px;padding:8px 10px;
+  margin-top:8px;font-size:12px;color:#791F1F}
+.motif-badge strong{display:block;font-size:10px;text-transform:uppercase;
+  letter-spacing:.5px;margin-bottom:2px;opacity:.7}
+
+/* ── MODAL ────────────────────────────────────────────── */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:100;
+  display:flex;align-items:flex-end;justify-content:center}
+.modal{background:#fff;border-radius:20px 20px 0 0;padding:20px 16px 32px;
+  width:100%;max-width:480px;max-height:85vh;overflow-y:auto}
+.modal-handle{width:36px;height:4px;background:#E0E0E0;border-radius:2px;
+  margin:0 auto 16px}
+.modal h3{font-size:15px;font-weight:600;margin-bottom:14px}
+.form-row{margin-bottom:12px}
+.form-row label{font-size:11px;color:#888;display:block;margin-bottom:5px;font-weight:500}
+.form-row select,.form-row input,.form-row textarea{
+  width:100%;padding:10px 12px;border-radius:10px;border:1.5px solid #E8E8E8;
+  background:#F8F9FB;color:#1A1A2E;font-family:inherit;font-size:13px;
+  -webkit-appearance:none;appearance:none}
+.form-row select:focus,.form-row input:focus,.form-row textarea:focus{
+  outline:none;border-color:#534AB7;background:#fff}
+.form-row textarea{resize:none;min-height:72px}
+.modal-btns{display:flex;gap:8px;margin-top:16px}
+
+/* ── TIMELINE ─────────────────────────────────────────── */
+.timeline{padding:4px 0}
+.tl-item{display:flex;gap:10px;margin-bottom:12px}
+.tl-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;margin-top:3px}
+.tl-line{width:1px;background:#E8E8E8;margin:10px auto 0;height:100%}
+.tl-text{font-size:12px;color:#666;line-height:1.5}
+.tl-text strong{color:#1A1A2E;display:block;font-size:13px}
+
+/* ── SETUP SCREEN ─────────────────────────────────────── */
+.setup{padding:20px;max-width:480px;margin:0 auto}
+.setup h2{font-size:18px;font-weight:600;margin-bottom:8px}
+.setup p{font-size:13px;color:#666;margin-bottom:20px;line-height:1.6}
+.step-num{width:28px;height:28px;border-radius:50%;background:#534AB7;color:#fff;
+  display:flex;align-items:center;justify-content:center;font-size:13px;
+  font-weight:600;flex-shrink:0}
+.step-row{display:flex;gap:12px;align-items:flex-start;margin-bottom:16px}
+.step-content h4{font-size:13px;font-weight:600;margin-bottom:4px}
+.step-content p{font-size:12px;color:#666;line-height:1.5}
+code{background:#F0F0F0;padding:2px 6px;border-radius:4px;font-size:11px;font-family:monospace}
+
+/* ── TOAST ────────────────────────────────────────────── */
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);
+  background:#1A1A2E;color:#fff;padding:10px 18px;border-radius:10px;
+  font-size:13px;z-index:200;box-shadow:0 4px 20px rgba(0,0,0,.3);
+  white-space:nowrap;animation:slideUp .25s ease}
+@keyframes slideUp{from{transform:translateX(-50%) translateY(20px);opacity:0}
+  to{transform:translateX(-50%) translateY(0);opacity:1}}
+
+/* ── LOADING ──────────────────────────────────────────── */
+.loader{text-align:center;padding:40px;color:#888;font-size:13px}
+.spinner{width:28px;height:28px;border:3px solid #E8E8E8;border-top-color:#534AB7;
+  border-radius:50%;animation:spin .7s linear infinite;margin:0 auto 12px}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── MOTIF SECTION ────────────────────────────────────── */
+.motif-grid{display:grid;gap:6px;margin-bottom:8px}
+.motif-opt{padding:10px 12px;border-radius:10px;border:1.5px solid #E8E8E8;
+  background:#F8F9FB;cursor:pointer;font-size:12px;color:#1A1A2E;
+  transition:all .15s;text-align:left;width:100%;font-family:inherit}
+.motif-opt.selected{border-color:#534AB7;background:#EEEDFE;color:#3C3489}
+.motif-opt:active{opacity:.8}
+
+/* ── PERF BARS ────────────────────────────────────────── */
+.perf-bar-bg{background:#F0F0F0;border-radius:4px;height:6px;margin-top:4px}
+.perf-bar{height:6px;border-radius:4px;transition:width .5s ease}
+
+/* ── RESPONSIVE ───────────────────────────────────────── */
+@media(min-width:500px){
+  .kpi-grid{grid-template-columns:repeat(4,1fr)}
+  .modal{border-radius:16px;margin-bottom:20px}
+  .modal-bg{align-items:center}
+}
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <div class="logo">🛒 <span>CodAfrik</span></div>
+  <div class="sync-status">
+    <div class="sync-dot" id="sync-dot"></div>
+    <span id="sync-label">Connecté</span>
+  </div>
+</div>
+
+<!-- ROLE BAR -->
+<div class="role-bar">
+  <button class="role-btn r-admin active" onclick="setRole('admin')">👑 Admin</button>
+  <button class="role-btn r-closeur" onclick="setRole('closeur')">📞 Closeur</button>
+  <button class="role-btn r-livreur" onclick="setRole('livreur')">🚚 Livreur</button>
+</div>
+
+<!-- NAV -->
+<div class="nav" id="nav"></div>
+
+<!-- CONTENT -->
+<div class="content" id="content">
+  <div class="loader"><div class="spinner"></div>Chargement...</div>
+</div>
+
+<!-- MODAL CONTAINER -->
+<div id="modal-container"></div>
+
+<!-- SCRIPTS -->
+<script src="config.js"></script>
+<script src="sheets-api.js"></script>
+<script>
+'use strict';
+
+// ── ÉTAT GLOBAL ───────────────────────────────────────────
+let role = 'admin';
+let tab  = 'dashboard';
+let orders = [];
+let cfgData = { closeurs:[], livreurs:[], produits:[] };
+let isConfigured = false;
+let refreshTimer  = null;
+
+// Identité livreur/closeur connecté (à personnaliser selon le lien)
+// En prod : tu génères un lien unique par personne
+// Ex: app.html?role=livreur&id=LIV001
+const urlParams = new URLSearchParams(location.search);
+const ME_ROLE = urlParams.get('role') || null;
+const ME_ID   = urlParams.get('nom')  || null;
+
+// ── SHEETS API ───────────────────────────────────────────
+let api = null;
+
+function initAPI() {
+  // Fonctionne sans clé API - lecture via URL publique CSV
+  if (!CONFIG.SHEET_ID) return false;
+  api = new SheetsAPI(CONFIG);
+  return true;
+}
+
+// ── STATUTS ───────────────────────────────────────────────
+const STATUTS = {
+  'En attente':        { bg:'#E6F1FB', cl:'#185FA5' },
+  'Assignée closeur':  { bg:'#EEEDFE', cl:'#3C3489' },
+  'En appel':          { bg:'#FAEEDA', cl:'#633806' },
+  'Confirmée':         { bg:'#EAF3DE', cl:'#3B6D11' },
+  'Assignée livreur':  { bg:'#FAECE7', cl:'#712B13' },
+  'En livraison':      { bg:'#FAEEDA', cl:'#633806' },
+  'Livrée ✓':         { bg:'#EAF3DE', cl:'#27500A' },
+  'Refusée':           { bg:'#FCEBEB', cl:'#791F1F' },
+  'Annulée':           { bg:'#F1EFE8', cl:'#5F5E5A' },
+  'Retournée':         { bg:'#FCEBEB', cl:'#501313' },
+};
+const MOTIFS_ANNUL = [
+  'Client injoignable (3 tentatives)',
+  "Client a changé d'avis",
+  'Doublon de commande',
+  'Mauvais numéro',
+  'Prix refusé par le client',
+  'Délai trop long',
+  'Autre',
+];
+const MOTIFS_REFUS = [
+  'Client absent à la livraison',
+  'Client nie avoir commandé',
+  'Adresse introuvable',
+  'Client refuse de payer',
+  'Produit endommagé',
+  'Mauvais produit livré',
+  'Autre',
+];
+
+// ── HELPERS ───────────────────────────────────────────────
+const $  = id => document.getElementById(id);
+const esc = s => (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+
+function statusBadge(s) {
+  const c = STATUTS[s] || { bg:'#F1EFE8', cl:'#5F5E5A' };
+  return `<span class="status" style="background:${c.bg};color:${c.cl}">${esc(s)}</span>`;
+}
+
+function toast(msg, dur=3000) {
+  const el = document.createElement('div');
+  el.className = 'toast';
+  el.textContent = msg;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), dur);
+}
+
+function setSyncStatus(state) {
+  const dot = $('sync-dot');
+  const lbl = $('sync-label');
+  if (!dot) return;
+  dot.className = 'sync-dot' + (state === 'syncing' ? ' syncing' : state === 'error' ? ' error' : '');
+  lbl.textContent = state === 'syncing' ? 'Sync...' : state === 'error' ? 'Hors ligne' : 'Connecté';
+}
+
+function closeModal() {
+  $('modal-container').innerHTML = '';
+}
+
+function showModal(html) {
+  $('modal-container').innerHTML = `
+    <div class="modal-bg" onclick="if(event.target===this)closeModal()">
+      <div class="modal">
+        <div class="modal-handle"></div>
+        ${html}
+      </div>
+    </div>`;
+}
+
+// ── NAVIGATION ────────────────────────────────────────────
+const TABS = {
+  admin:   [{id:'dashboard',l:'📊 Dashboard'},{id:'commandes',l:'📋 Commandes'},{id:'closeurs_perf',l:'📞 Closeurs'},{id:'livreurs_perf',l:'🚚 Livreurs'},{id:'motifs',l:'📉 Motifs'},{id:'ajouter',l:'➕ Nouveau'}],
+  closeur: [{id:'mes_cmd',l:'📋 Mes commandes'},{id:'historique_clo',l:'🕐 Historique'}],
+  livreur: [{id:'mes_liv',l:'🚚 Mes livraisons'},{id:'historique_liv',l:'✓ Historique'}],
+};
+
+function renderNav() {
+  const pending = orders.filter(o=>o.statut==='En attente').length;
+  $('nav').innerHTML = TABS[role].map(t =>
+    `<button class="nav-btn ${tab===t.id?'active':''}" onclick="switchTab('${t.id}')">${t.l}${t.id==='commandes'&&pending>0?`<span class="notif-pill">${pending}</span>`:''}</button>`
+  ).join('');
+}
+
+function switchTab(t) { tab = t; renderPage(); }
+
+function setRole(r) {
+  role = r;
+  document.querySelectorAll('.role-btn').forEach(b => b.classList.remove('active'));
+  document.querySelector('.role-btn.r-'+r).classList.add('active');
+  tab = r==='admin'?'dashboard':r==='closeur'?'mes_cmd':'mes_liv';
+  renderPage();
+}
+
+// ── CHARGEMENT DONNÉES ─────────────────────────────────────
+async function loadData() {
+  if (!api) { renderPage(); return; }
+  setSyncStatus('syncing');
+  try {
+    const [cmds, cfg] = await Promise.all([api.getCommandes(), api.getConfig()]);
+    orders  = cmds;
+    cfgData = cfg;
+    setSyncStatus('ok');
+  } catch(e) {
+    setSyncStatus('error');
+    toast('⚠️ Impossible de se connecter à Google Sheets');
+  }
+  renderPage();
+}
+
+async function writeUpdate(action, ...args) {
+  if (!api) { renderPage(); return true; }
+  setSyncStatus('syncing');
+  let res;
+  if (action === 'statut')    res = await api.updateStatut(...args);
+  if (action === 'closeur')   res = await api.assignCloseur(...args);
+  if (action === 'livreur')   res = await api.assignLivreur(...args);
+  if (action === 'add')       res = await api.addCommande(...args);
+  setSyncStatus(res && res.success ? 'ok' : 'error');
+  await loadData();
+  return res && res.success;
+}
+
+// ── ROUTER ────────────────────────────────────────────────
+function renderPage() {
+  if (!isConfigured) { renderSetup(); return; }
+  renderNav();
+  const map = {
+    dashboard:      renderDashboard,
+    commandes:      renderCommandes,
+    closeurs_perf:  renderCloseursPerf,
+    livreurs_perf:  renderLivreursPerf,
+    motifs:         renderMotifs,
+    ajouter:        renderAjouter,
+    mes_cmd:        renderCloseurView,
+    historique_clo: renderHistoClo,
+    mes_liv:        renderLivreurView,
+    historique_liv: renderHistoLiv,
+  };
+  $('content').innerHTML = (map[tab] || renderDashboard)();
+}
+
+// ── DASHBOARD ──────────────────────────────────────────────
+function renderDashboard() {
+  const total   = orders.length;
+  const livrees = orders.filter(o=>o.statut==='Livrée ✓').length;
+  const refus   = orders.filter(o=>o.statut==='Refusée').length;
+  const annul   = orders.filter(o=>o.statut==='Annulée').length;
+  const caNet   = orders.filter(o=>o.statut==='Livrée ✓').reduce((s,o)=>s+(o.prix*o.qte-o.frais),0);
+  const taux    = total>0 ? Math.round(livrees/total*100) : 0;
+  const enCours = orders.filter(o=>!['Livrée ✓','Refusée','Annulée','Retournée'].includes(o.statut)).length;
+  const probleme = refus + annul;
+
+  return `
+<div class="kpi-grid">
+  <div class="kpi" style="border-top-color:#534AB7"><div class="kpi-label">Total commandes</div><div class="kpi-val">${total}</div><div class="kpi-sub">${enCours} en cours</div></div>
+  <div class="kpi" style="border-top-color:#27500A"><div class="kpi-label">CA net livré</div><div class="kpi-val">$${caNet.toFixed(0)}</div><div class="kpi-sub">${livrees} livrées</div></div>
+  <div class="kpi" style="border-top-color:#1D9E75"><div class="kpi-label">Taux livraison</div><div class="kpi-val">${taux}%</div><div class="kpi-sub">Objectif &gt;80%</div></div>
+  <div class="kpi" style="border-top-color:#E24B4A"><div class="kpi-label">Refus + Annul.</div><div class="kpi-val">${probleme}</div><div class="kpi-sub">${total>0?Math.round(probleme/total*100):0}% du total</div></div>
+</div>
+
+<div class="card">
+  <div class="card-header">🔴 Actions requises
+    <span class="badge" style="background:#FCEBEB;color:#791F1F;margin-left:auto">${orders.filter(o=>['En attente','Confirmée'].includes(o.statut)).length}</span>
+  </div>
+  ${orders.filter(o=>['En attente','Confirmée'].includes(o.statut)).length === 0
+    ? '<div class="loader" style="padding:20px">✓ Aucune action requise</div>'
+    : `<div class="table-wrap"><table>
+        <tr><th>ID</th><th>Client</th><th>Statut</th><th></th></tr>
+        ${orders.filter(o=>['En attente','Confirmée'].includes(o.statut)).map(o=>`
+        <tr>
+          <td style="font-size:10px;color:#888">${esc(o.id)}</td>
+          <td><strong>${esc(o.client)}</strong><br><span style="font-size:10px;color:#888">${esc(o.ville)}</span></td>
+          <td>${statusBadge(o.statut)}</td>
+          <td><button class="btn btn-sm btn-primary" onclick="openAssign('${esc(o.id)}')">Assigner</button></td>
+        </tr>`).join('')}
+      </table></div>`}
+</div>
+
+<div class="card">
+  <div class="card-header">📊 Répartition des statuts</div>
+  <div class="card-body" style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+    ${Object.entries(STATUTS).map(([s,c])=>{
+      const n = orders.filter(o=>o.statut===s).length;
+      if(!n) return '';
+      const pct = total>0?Math.round(n/total*100):0;
+      return `<div style="background:${c.bg};border-radius:10px;padding:10px">
+        <div style="font-size:11px;color:${c.cl};font-weight:600;margin-bottom:2px">${s}</div>
+        <div style="font-size:20px;font-weight:700;color:${c.cl}">${n}</div>
+        <div style="font-size:10px;color:${c.cl};opacity:.7">${pct}%</div>
+      </div>`;
+    }).join('')}
+  </div>
+</div>
+
+${orders.filter(o=>o.motif).length>0?`
+<div class="card">
+  <div class="card-header">📉 Derniers motifs signalés</div>
+  <div class="card-body">
+    ${orders.filter(o=>o.motif).slice(0,4).map(o=>`
+    <div class="motif-badge" style="margin-bottom:8px">
+      <strong>${esc(o.id)} — ${o.statut}</strong>${esc(o.motif)}
+    </div>`).join('')}
+  </div>
+</div>`:''}`;
+}
+
+// ── COMMANDES ADMIN ────────────────────────────────────────
+function renderCommandes() {
+  return `
+<div class="card">
+  <div class="card-header">📋 Toutes les commandes
+    <span class="badge" style="background:#EEEDFE;color:#3C3489;margin-left:4px">${orders.length}</span>
+    <button class="btn btn-sm btn-primary" style="margin-left:auto" onclick="switchTab('ajouter')">+ Nouveau</button>
+  </div>
+  <div class="table-wrap">
+  <table>
+    <tr><th>ID</th><th>Client</th><th>Produit</th><th>Closeur</th><th>Livreur</th><th>Statut</th><th>Motif</th><th></th></tr>
+    ${orders.map(o=>`
+    <tr>
+      <td style="font-size:10px;color:#888">${esc(o.id)}<br><span style="opacity:.6">${esc(o.shopify)}</span></td>
+      <td><strong>${esc(o.client)}</strong><br><span style="font-size:10px;color:#888">${esc(o.ville)}</span></td>
+      <td style="font-size:11px">${esc((o.produit.split(' - ')[1]||o.produit))} ×${o.qte}<br><strong>$${(o.prix*o.qte).toFixed(0)}</strong></td>
+      <td style="font-size:11px">${o.closeur||'<span style="color:#E24B4A">—</span>'}</td>
+      <td style="font-size:11px">${o.livreur||'<span style="color:#888">—</span>'}</td>
+      <td>${statusBadge(o.statut)}</td>
+      <td style="font-size:11px;color:#791F1F;max-width:130px;white-space:normal">${o.motif?esc(o.motif):'<span style="color:#ccc">—</span>'}</td>
+      <td style="white-space:nowrap">
+        <button class="btn btn-sm" onclick="openAssign('${esc(o.id)}')">✏️</button>
+        <button class="btn btn-sm" onclick="openTimeline('${esc(o.id)}')">🕐</button>
+      </td>
+    </tr>`).join('')}
+  </table>
+  </div>
+</div>`;
+}
+
+// ── CLOSEURS PERF ──────────────────────────────────────────
+function renderCloseursPerf() {
+  const noms = [...new Set(orders.map(o=>o.closeur).filter(Boolean))];
+  if (!noms.length) return '<div class="loader">Aucun closeur avec des commandes</div>';
+  return `<div class="card">
+    <div class="card-header">📞 Performance des closeurs</div>
+    <div class="table-wrap"><table>
+      <tr><th>Closeur</th><th>Assignées</th><th>Confirmées</th><th>Annulées</th><th>Taux</th><th>CA</th></tr>
+      ${noms.map(cl=>{
+        const asgn = orders.filter(o=>o.closeur===cl).length;
+        const conf = orders.filter(o=>o.closeur===cl&&['Confirmée','Assignée livreur','En livraison','Livrée ✓'].includes(o.statut)).length;
+        const ann  = orders.filter(o=>o.closeur===cl&&o.statut==='Annulée').length;
+        const ca   = orders.filter(o=>o.closeur===cl&&o.statut==='Livrée ✓').reduce((s,o)=>s+o.prix*o.qte,0);
+        const taux = asgn>0?Math.round(conf/asgn*100):0;
+        const color= taux>=75?'#27500A':taux>=50?'#633806':'#791F1F';
+        return `<tr>
+          <td><strong>${esc(cl)}</strong></td>
+          <td>${asgn}</td><td>${conf}</td><td>${ann}</td>
+          <td style="color:${color};font-weight:600">${taux}%
+            <div class="perf-bar-bg"><div class="perf-bar" style="width:${taux}%;background:${color}"></div></div>
+          </td>
+          <td><strong>$${ca.toFixed(0)}</strong></td>
+        </tr>`;
+      }).join('')}
+    </table></div>
+  </div>`;
+}
+
+// ── LIVREURS PERF ──────────────────────────────────────────
+function renderLivreursPerf() {
+  const noms = [...new Set(orders.map(o=>o.livreur).filter(Boolean))];
+  if (!noms.length) return '<div class="loader">Aucun livreur avec des commandes</div>';
+  return `<div class="card">
+    <div class="card-header">🚚 Performance des livreurs</div>
+    <div class="table-wrap"><table>
+      <tr><th>Livreur</th><th>Assignées</th><th>Livrées</th><th>Refusées</th><th>Taux</th><th>CA collecté</th></tr>
+      ${noms.map(lv=>{
+        const asgn = orders.filter(o=>o.livreur===lv).length;
+        const liv  = orders.filter(o=>o.livreur===lv&&o.statut==='Livrée ✓').length;
+        const ref  = orders.filter(o=>o.livreur===lv&&o.statut==='Refusée').length;
+        const ca   = orders.filter(o=>o.livreur===lv&&o.statut==='Livrée ✓').reduce((s,o)=>s+o.prix*o.qte,0);
+        const taux = asgn>0?Math.round(liv/asgn*100):0;
+        const color= taux>=80?'#27500A':taux>=60?'#633806':'#791F1F';
+        return `<tr>
+          <td><strong>${esc(lv)}</strong></td>
+          <td>${asgn}</td><td>${liv}</td><td>${ref}</td>
+          <td style="color:${color};font-weight:600">${taux}%
+            <div class="perf-bar-bg"><div class="perf-bar" style="width:${taux}%;background:${color}"></div></div>
+          </td>
+          <td><strong>$${ca.toFixed(0)}</strong></td>
+        </tr>`;
+      }).join('')}
+    </table></div>
+  </div>`;
+}
+
+// ── MOTIFS ─────────────────────────────────────────────────
+function renderMotifs() {
+  const refs  = orders.filter(o=>o.statut==='Refusée'&&o.motif);
+  const anns  = orders.filter(o=>o.statut==='Annulée'&&o.motif);
+
+  function barChart(list) {
+    if(!list.length) return '<div style="color:#aaa;font-size:12px;padding:8px 0">Aucun motif enregistré</div>';
+    const counts={};
+    list.forEach(o=>counts[o.motif]=(counts[o.motif]||0)+1);
+    const max=Math.max(...Object.values(counts));
+    return Object.entries(counts).sort((a,b)=>b[1]-a[1]).map(([m,n])=>`
+      <div style="margin-bottom:10px">
+        <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px">
+          <span>${esc(m)}</span><strong>${n}</strong>
+        </div>
+        <div class="perf-bar-bg"><div class="perf-bar" style="width:${Math.round(n/max*100)}%;background:#534AB7"></div></div>
+      </div>`).join('');
+  }
+
+  return `
+<div class="card"><div class="card-header">✕ Motifs de refus <span class="badge" style="background:#FCEBEB;color:#791F1F">${refs.length}</span></div>
+  <div class="card-body">${barChart(refs)}</div></div>
+<div class="card"><div class="card-header">✕ Motifs d'annulation <span class="badge" style="background:#F1EFE8;color:#5F5E5A">${anns.length}</span></div>
+  <div class="card-body">${barChart(anns)}</div></div>
+<div class="card"><div class="card-header">📋 Détail</div>
+  <div class="table-wrap"><table>
+    <tr><th>ID</th><th>Closeur</th><th>Livreur</th><th>Statut</th><th>Motif</th></tr>
+    ${orders.filter(o=>o.motif).map(o=>`
+    <tr><td style="font-size:10px;color:#888">${esc(o.id)}</td>
+    <td style="font-size:11px">${esc(o.closeur)||'—'}</td>
+    <td style="font-size:11px">${esc(o.livreur)||'—'}</td>
+    <td>${statusBadge(o.statut)}</td>
+    <td style="font-size:12px;color:#791F1F">${esc(o.motif)}</td>
+    </tr>`).join('')||'<tr><td colspan="5" style="text-align:center;padding:20px;color:#aaa">Aucun motif</td></tr>'}
+  </table></div></div>`;
+}
+
+// ── AJOUTER COMMANDE ───────────────────────────────────────
+function renderAjouter() {
+  const livreurs = cfgData.livreurs.length ? cfgData.livreurs : [];
+  const closeurs = cfgData.closeurs.length ? cfgData.closeurs : [];
+  const produits = cfgData.produits.length ? cfgData.produits : [];
+  const villes   = [...new Set(livreurs.map(l=>l.ville))];
+
+  return `<div class="card">
+    <div class="card-header">➕ Nouvelle commande</div>
+    <div class="card-body">
+      <div class="form-row"><label>Nom client *</label><input id="n_client" placeholder="Amadou Diop" autocomplete="off"></div>
+      <div class="form-row"><label>Téléphone</label><input id="n_tel" type="tel" placeholder="77 123 4567"></div>
+      <div class="form-row"><label>Produit *</label>
+        <select id="n_produit">
+          ${produits.map(p=>`<option value="${p.id}|${p.prixVente}">${p.id} - ${p.nom} ($${p.prixVente})</option>`).join('')}
+          ${!produits.length?'<option>Charge ta config depuis Google Sheets</option>':''}
+        </select></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div class="form-row"><label>Quantité</label><input id="n_qte" type="number" value="1" min="1"></div>
+        <div class="form-row"><label>Source</label>
+          <select id="n_source">
+            <option>Facebook Ads</option><option>Instagram Ads</option>
+            <option>WhatsApp</option><option>Organique</option><option>Bouche à oreille</option>
+          </select></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div class="form-row"><label>Pays</label><input id="n_pays" placeholder="Sénégal"></div>
+        <div class="form-row"><label>Ville</label>
+          <select id="n_ville">
+            ${villes.map(v=>`<option>${v}</option>`).join('')}
+            ${!villes.length?'<option>Dakar</option><option>Abidjan</option><option>Casablanca</option>':''}
+          </select></div>
+      </div>
+      <div class="form-row"><label>Assigner closeur</label>
+        <select id="n_closeur">
+          <option value="">— Non assigné —</option>
+          ${closeurs.map(c=>`<option>${c.nom}</option>`).join('')}
+        </select></div>
+      <button class="btn btn-primary btn-block" onclick="createOrder()">✓ Créer la commande</button>
+      <div id="create-msg" style="margin-top:10px;font-size:13px;color:#27500A;text-align:center"></div>
+    </div>
+  </div>`;
+}
+
+async function createOrder() {
+  const client = $('n_client').value.trim();
+  if (!client) { toast('⚠️ Nom client requis'); return; }
+  const prodRaw = $('n_produit').value.split('|');
+  const prodId  = prodRaw[0]||'PRD001';
+  const prix    = parseFloat(prodRaw[1])||20;
+  const closeur = $('n_closeur').value;
+  const now     = new Date().toISOString().split('T')[0];
+
+  const row = [
+    '', // ID auto
+    `SHO-${Date.now()}`,
+    now,
+    client,
+    $('n_tel').value,
+    $('n_pays').value,
+    $('n_ville').value,
+    prodId,
+    $('n_qte').value,
+    '',
+    prix,
+    prix*0.4, // prix achat estimé
+    3.5,
+    '',
+    closeur,
+    '',
+    '',
+    '', '',
+    closeur ? 'Assignée closeur' : 'En attente',
+    '',
+    '',
+    '',
+    $('n_source').value,
+  ];
+
+  $('create-msg').textContent = 'Enregistrement...';
+  const ok = await writeUpdate('add', row);
+  $('create-msg').textContent = ok ? '✓ Commande créée !' : '✓ (mode démo — connecte Google Sheets pour sauvegarder)';
+
+  // Mode démo : ajoute localement
+  if (!ok) {
+    orders.unshift({
+      id:`CMD-${String(orders.length+1).padStart(4,'0')}`,
+      shopify:`SHO-${Date.now()}`, date:now,
+      client, tel:$('n_tel').value,
+      pays:$('n_pays').value, ville:$('n_ville').value,
+      produit:prodId, qte:parseInt($('n_qte').value)||1, prix, frais:3.5,
+      closeur, livreur:'', statut:closeur?'Assignée closeur':'En attente',
+      motif:'', source:$('n_source').value,
+    });
+    renderPage();
+  }
+}
+
+// ── VUE CLOSEUR ────────────────────────────────────────────
+function renderCloseurView() {
+  const monNom = ME_ID || 'Fatou Ndiaye'; // remplacé par le paramètre URL en prod
+  const actifs = orders.filter(o=>o.closeur===monNom && !['Livrée ✓','Refusée','Annulée','Retournée'].includes(o.statut));
+
+  return `
+<div style="background:#fff;border-radius:12px;padding:14px;margin-bottom:12px;display:flex;gap:10px;align-items:center">
+  <div style="width:40px;height:40px;background:#FAEEDA;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">📞</div>
+  <div><div style="font-weight:600">${esc(monNom)}</div>
+  <div style="font-size:11px;color:#888">${actifs.length} commande(s) active(s)</div></div>
+</div>
+${actifs.length===0?'<div class="loader" style="padding:30px">✓ Toutes les commandes sont traitées</div>':''}
+${actifs.map(o=>`
+<div class="cmd-card">
+  <div class="cmd-card-top">
+    <div><div class="cmd-id">${esc(o.id)}</div><div style="font-size:10px;color:#aaa">${esc(o.source)}</div></div>
+    ${statusBadge(o.statut)}
+  </div>
+  <div class="cmd-detail">👤 <strong>${esc(o.client)}</strong></div>
+  <a href="tel:${esc(o.tel)}" class="cmd-detail" style="display:block">📞 <strong style="color:#534AB7">${esc(o.tel)}</strong></a>
+  <div class="cmd-detail">📦 <strong>${esc(o.produit)}</strong> ×${o.qte}</div>
+  <div class="cmd-detail">📍 ${esc(o.ville)}, ${esc(o.pays)}</div>
+  <div class="cmd-amount">
+    <div><div style="font-size:11px;color:#888">Valeur commande</div><div style="font-size:22px;font-weight:700;color:#27500A">$${(o.prix*o.qte).toFixed(0)}</div></div>
+  </div>
+  <div class="action-row">
+    ${o.statut!=='Confirmée'?`<button class="btn btn-success" onclick="cloAction('confirm','${esc(o.id)}')">✓ Confirmer</button>`:''}
+    ${o.statut==='Confirmée'?`<button class="btn btn-warning" onclick="openAssignLivreur('${esc(o.id)}')">🚚 Assigner livreur</button>`:''}
+    <button class="btn" style="color:#633806;background:#FAEEDA;border-color:#FAC775" onclick="cloAction('appel','${esc(o.id)}')">📞 En appel</button>
+    <button class="btn btn-danger" onclick="openMotifModal('annul','${esc(o.id)}')">✕ Annuler</button>
+  </div>
+</div>`).join('')}`;
+}
+
+async function cloAction(action, id) {
+  const o = orders.find(x=>x.id===id);
+  if (!o) return;
+  if (action === 'confirm') {
+    o.statut = 'Confirmée';
+    await writeUpdate('statut', id, 'Confirmée', '');
+    toast('✓ Commande confirmée');
+  } else if (action === 'appel') {
+    o.statut = 'En appel';
+    await writeUpdate('statut', id, 'En appel', '');
+  }
+  renderPage();
+}
+
+// ── VUE LIVREUR ────────────────────────────────────────────
+function renderLivreurView() {
+  const monNom = ME_ID || 'Mamadou Diallo';
+  const actifs = orders.filter(o=>o.livreur===monNom && !['Livrée ✓','Refusée','Annulée','Retournée'].includes(o.statut));
+
+  return `
+<div style="background:#fff;border-radius:12px;padding:14px;margin-bottom:12px;display:flex;gap:10px;align-items:center">
+  <div style="width:40px;height:40px;background:#FAECE7;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">🚚</div>
+  <div><div style="font-weight:600">${esc(monNom)}</div>
+  <div style="font-size:11px;color:#888">${actifs.length} livraison(s) à effectuer</div></div>
+</div>
+${actifs.length===0?'<div class="loader" style="padding:30px">✓ Aucune livraison en attente</div>':''}
+${actifs.map(o=>`
+<div class="cmd-card">
+  <div class="cmd-card-top">
+    <strong>${esc(o.id)}</strong>
+    ${statusBadge(o.statut)}
+  </div>
+  <div class="cmd-detail">👤 <strong>${esc(o.client)}</strong></div>
+  <a href="tel:${esc(o.tel)}" class="cmd-detail" style="display:block">📞 <strong style="color:#534AB7">${esc(o.tel)}</strong></a>
+  <div class="cmd-detail">📦 ${esc(o.produit.split(' - ')[1]||o.produit)} ×${o.qte}</div>
+  <div class="cmd-amount">
+    <div>
+      <div style="font-size:11px;color:#888">Montant COD à collecter</div>
+      <div class="cod-amount">$${(o.prix*o.qte).toFixed(0)}</div>
+    </div>
+    <div style="text-align:right">
+      <div style="font-size:11px;color:#888">Ta commission</div>
+      <div style="font-size:18px;font-weight:600;color:#534AB7">$${o.frais.toFixed(1)}</div>
+    </div>
+  </div>
+  <div class="action-row">
+    ${o.statut!=='En livraison'?`<button class="btn btn-warning" onclick="livAction('route','${esc(o.id)}')">🚗 En route</button>`:''}
+    <button class="btn btn-success" style="flex:1" onclick="livAction('livrer','${esc(o.id)}')">✓ Livrée & COD collecté</button>
+    <button class="btn btn-danger" onclick="openMotifModal('refus','${esc(o.id)}')">✕ Refusée</button>
+  </div>
+</div>`).join('')}`;
+}
+
+async function livAction(action, id) {
+  const o = orders.find(x=>x.id===id);
+  if (!o) return;
+  if (action === 'route') {
+    o.statut = 'En livraison';
+    await writeUpdate('statut', id, 'En livraison', '');
+    toast('🚗 Statut mis à jour');
+  } else if (action === 'livrer') {
+    o.statut = 'Livrée ✓';
+    await writeUpdate('statut', id, 'Livrée ✓', '');
+    toast('✅ Livraison confirmée ! Admin notifié.');
+  }
+  renderPage();
+}
+
+// ── HISTORIQUES ────────────────────────────────────────────
+function renderHistoClo() {
+  const monNom = ME_ID || 'Fatou Ndiaye';
+  const hist = orders.filter(o=>o.closeur===monNom && ['Livrée ✓','Annulée','Refusée'].includes(o.statut));
+  const livrees = hist.filter(o=>o.statut==='Livrée ✓').length;
+  const taux = hist.length>0?Math.round(livrees/hist.length*100):0;
+  return `
+  <div class="kpi-grid" style="grid-template-columns:1fr 1fr 1fr">
+    <div class="kpi" style="border-top-color:#27500A"><div class="kpi-label">Livrées</div><div class="kpi-val">${livrees}</div></div>
+    <div class="kpi" style="border-top-color:#5F5E5A"><div class="kpi-label">Annulées</div><div class="kpi-val">${hist.filter(o=>o.statut==='Annulée').length}</div></div>
+    <div class="kpi" style="border-top-color:#534AB7"><div class="kpi-label">Taux confirm.</div><div class="kpi-val">${taux}%</div></div>
+  </div>
+  <div class="card"><div class="card-header">🕐 Historique</div>
+  <div class="table-wrap"><table>
+    <tr><th>ID</th><th>Client</th><th>Statut</th><th>Motif</th></tr>
+    ${hist.map(o=>`<tr>
+      <td style="font-size:10px;color:#888">${esc(o.id)}</td>
+      <td>${esc(o.client)}</td>
+      <td>${statusBadge(o.statut)}</td>
+      <td style="font-size:11px;color:#791F1F">${esc(o.motif)||'—'}</td>
+    </tr>`).join('')||'<tr><td colspan="4" style="text-align:center;padding:20px;color:#aaa">Aucun historique</td></tr>'}
+  </table></div></div>`;
+}
+
+function renderHistoLiv() {
+  const monNom = ME_ID || 'Mamadou Diallo';
+  const hist = orders.filter(o=>o.livreur===monNom && ['Livrée ✓','Refusée'].includes(o.statut));
+  const livrees = hist.filter(o=>o.statut==='Livrée ✓').length;
+  const ca = hist.filter(o=>o.statut==='Livrée ✓').reduce((s,o)=>s+o.prix*o.qte,0);
+  return `
+  <div class="kpi-grid" style="grid-template-columns:1fr 1fr 1fr">
+    <div class="kpi" style="border-top-color:#27500A"><div class="kpi-label">Livrées</div><div class="kpi-val">${livrees}</div></div>
+    <div class="kpi" style="border-top-color:#E24B4A"><div class="kpi-label">Refusées</div><div class="kpi-val">${hist.length-livrees}</div></div>
+    <div class="kpi" style="border-top-color:#534AB7"><div class="kpi-label">CA collecté</div><div class="kpi-val">$${ca.toFixed(0)}</div></div>
+  </div>
+  <div class="card"><div class="card-header">✓ Historique livraisons</div>
+  <div class="table-wrap"><table>
+    <tr><th>ID</th><th>Client</th><th>Montant</th><th>Résultat</th><th>Motif</th></tr>
+    ${hist.map(o=>`<tr>
+      <td style="font-size:10px;color:#888">${esc(o.id)}</td>
+      <td>${esc(o.client)}</td>
+      <td><strong>$${(o.prix*o.qte).toFixed(0)}</strong></td>
+      <td>${statusBadge(o.statut)}</td>
+      <td style="font-size:11px;color:#791F1F">${esc(o.motif)||'—'}</td>
+    </tr>`).join('')||'<tr><td colspan="5" style="text-align:center;padding:20px;color:#aaa">Aucun historique</td></tr>'}
+  </table></div></div>`;
+}
+
+// ── MODALS ─────────────────────────────────────────────────
+function openMotifModal(type, id) {
+  const o = orders.find(x=>x.id===id);
+  const motifs = type==='annul' ? MOTIFS_ANNUL : MOTIFS_REFUS;
+  const titre  = type==='annul' ? "Motif d'annulation" : 'Motif de refus';
+  let selected = '';
+  showModal(`
+    <h3>✕ ${titre}</h3>
+    <p style="font-size:12px;color:#888;margin-bottom:14px">${esc(o.id)} — ${esc(o.client)}</p>
+    <div class="motif-grid" id="motif-grid">
+      ${motifs.map(m=>`<button class="motif-opt" onclick="selectMotif(this,'${esc(m)}')">${esc(m)}</button>`).join('')}
+    </div>
+    <div class="form-row" id="autre-row" style="display:none">
+      <label>Préciser</label>
+      <textarea id="motif-autre" placeholder="Décrivez ce qui s'est passé..."></textarea>
+    </div>
+    <div class="form-row">
+      <label>Commentaire (optionnel)</label>
+      <textarea id="motif-comment" placeholder="Informations supplémentaires..." style="min-height:56px"></textarea>
+    </div>
+    <div class="modal-btns">
+      <button class="btn" style="flex:1" onclick="closeModal()">Retour</button>
+      <button class="btn btn-danger" style="flex:1" onclick="submitMotif('${type}','${esc(id)}')">Enregistrer</button>
+    </div>`);
+}
+
+function selectMotif(btn, val) {
+  document.querySelectorAll('.motif-opt').forEach(b=>b.classList.remove('selected'));
+  btn.classList.add('selected');
+  btn.dataset.val = val;
+  const autreRow = $('autre-row');
+  if (autreRow) autreRow.style.display = val==='Autre' ? 'block' : 'none';
+}
+
+async function submitMotif(type, id) {
+  const sel = document.querySelector('.motif-opt.selected');
+  if (!sel) { toast('⚠️ Choisis un motif'); return; }
+  const base    = sel.dataset.val;
+  const autre   = $('motif-autre')?.value || '';
+  const comment = $('motif-comment')?.value || '';
+  const motif   = (base==='Autre' ? autre||'Autre' : base) + (comment ? ` — ${comment}` : '');
+  const statut  = type==='annul' ? 'Annulée' : 'Refusée';
+
+  const o = orders.find(x=>x.id===id);
+  if (o) { o.statut=statut; o.motif=motif; }
+  await writeUpdate('statut', id, statut, motif);
+  closeModal();
+  toast(`${statut} — motif enregistré`);
+  renderPage();
+}
+
+function openAssign(id) {
+  const o = orders.find(x=>x.id===id);
+  const closeurs = cfgData.closeurs.length ? cfgData.closeurs : [{nom:'Fatou Ndiaye'},{nom:'Aissatou Camara'},{nom:'Mariam Coulibaly'}];
+  const livreurs = cfgData.livreurs.filter(l=>!o.ville||l.ville===o.ville);
+  showModal(`
+    <h3>Modifier — ${esc(id)}</h3>
+    <p style="font-size:12px;color:#888;margin-bottom:14px">${esc(o.client)} · ${esc(o.ville)} · ${statusBadge(o.statut)}</p>
+    <div class="form-row"><label>Closeur</label>
+      <select id="m_clo"><option value="">— Non assigné —</option>
+      ${closeurs.map(c=>`<option ${o.closeur===c.nom?'selected':''}>${c.nom}</option>`).join('')}</select></div>
+    <div class="form-row"><label>Livreur</label>
+      <select id="m_liv"><option value="">— Non assigné —</option>
+      ${livreurs.map(l=>`<option ${o.livreur===l.nom?'selected':''}>${l.nom}</option>`).join('')}
+      ${!livreurs.length?'<option>Mamadou Diallo</option><option>Koffi Traoré</option>':''}
+      </select></div>
+    <div class="form-row"><label>Statut</label>
+      <select id="m_stat">${Object.keys(STATUTS).map(s=>`<option ${o.statut===s?'selected':''}>${s}</option>`).join('')}</select></div>
+    <div class="modal-btns">
+      <button class="btn" style="flex:1" onclick="closeModal()">Annuler</button>
+      <button class="btn btn-primary" style="flex:1" onclick="saveAssign('${esc(id)}')">Enregistrer</button>
+    </div>`);
+}
+
+async function saveAssign(id) {
+  const o   = orders.find(x=>x.id===id);
+  const clo = $('m_clo').value;
+  const liv = $('m_liv').value;
+  const sta = $('m_stat').value;
+  if (clo && clo!==o.closeur) { o.closeur=clo; await writeUpdate('closeur',id,clo); }
+  if (liv && liv!==o.livreur) { o.livreur=liv; await writeUpdate('livreur',id,liv); }
+  if (sta !== o.statut)       { o.statut=sta;  await writeUpdate('statut',id,sta,''); }
+  closeModal(); renderPage();
+}
+
+function openAssignLivreur(id) {
+  const o = orders.find(x=>x.id===id);
+  const livreurs = cfgData.livreurs.filter(l=>!o.ville||l.ville===o.ville);
+  showModal(`
+    <h3>🚚 Assigner livreur — ${esc(id)}</h3>
+    <p style="font-size:12px;color:#888;margin-bottom:14px">${esc(o.client)} · ${esc(o.ville)}</p>
+    <div class="form-row"><label>Livreur disponible</label>
+      <select id="m_liv2">
+        ${livreurs.map(l=>`<option>${l.nom}</option>`).join('')}
+        ${!livreurs.length?'<option>Mamadou Diallo</option><option>Koffi Traoré</option>':''}
+      </select></div>
+    <div class="modal-btns">
+      <button class="btn" style="flex:1" onclick="closeModal()">Annuler</button>
+      <button class="btn btn-primary" style="flex:1" onclick="doAssignLivreur('${esc(id)}')">Assigner</button>
+    </div>`);
+}
+
+async function doAssignLivreur(id) {
+  const lv = $('m_liv2').value;
+  const o  = orders.find(x=>x.id===id);
+  o.livreur=lv; o.statut='Assignée livreur';
+  await writeUpdate('livreur',id,lv);
+  await writeUpdate('statut',id,'Assignée livreur','');
+  closeModal(); toast(`🚚 Assigné à ${lv}`); renderPage();
+}
+
+function openTimeline(id) {
+  const o = orders.find(x=>x.id===id);
+  showModal(`
+    <h3>🕐 Suivi — ${esc(id)}</h3>
+    <p style="font-size:12px;color:#888;margin-bottom:14px">${esc(o.client)} · ${esc(o.produit.split(' - ')[1]||o.produit)} ×${o.qte}</p>
+    <div class="timeline">
+      <div class="tl-item"><div class="tl-dot" style="background:#534AB7"></div>
+        <div class="tl-text"><strong>Commande créée</strong>${esc(o.date)}</div></div>
+      ${o.closeur?`<div class="tl-item"><div class="tl-dot" style="background:#BA7517"></div>
+        <div class="tl-text"><strong>Closeur assigné</strong>${esc(o.closeur)}</div></div>`:''}
+      ${['Confirmée','Assignée livreur','En livraison','Livrée ✓'].includes(o.statut)?`<div class="tl-item"><div class="tl-dot" style="background:#3B6D11"></div>
+        <div class="tl-text"><strong>Confirmée</strong></div></div>`:''}
+      ${o.livreur?`<div class="tl-item"><div class="tl-dot" style="background:#993C1D"></div>
+        <div class="tl-text"><strong>Livreur assigné</strong>${esc(o.livreur)}</div></div>`:''}
+      ${o.statut==='En livraison'||o.statut==='Livrée ✓'?`<div class="tl-item"><div class="tl-dot" style="background:#BA7517"></div>
+        <div class="tl-text"><strong>En cours de livraison</strong></div></div>`:''}
+      ${o.statut==='Livrée ✓'?`<div class="tl-item"><div class="tl-dot" style="background:#27500A"></div>
+        <div class="tl-text"><strong>Livrée ✓ — COD collecté</strong></div></div>`:''}
+      ${o.motif?`<div class="tl-item"><div class="tl-dot" style="background:#E24B4A"></div>
+        <div class="tl-text"><strong>${esc(o.statut)}</strong>${esc(o.motif)}</div></div>`:''}
+    </div>
+    <div style="text-align:center;margin:8px 0">${statusBadge(o.statut)}</div>
+    ${o.motif?`<div class="motif-badge"><strong>Motif</strong>${esc(o.motif)}</div>`:''}
+    <div class="modal-btns" style="margin-top:12px">
+      <button class="btn" style="flex:1" onclick="closeModal()">Fermer</button>
+    </div>`);
+}
+
+// ── SETUP (si pas configuré) ───────────────────────────────
+function renderSetup() {
+  $('nav').innerHTML = '';
+  $('content').innerHTML = `
+<div class="setup">
+  <h2>⚙️ Configuration requise</h2>
+  <p>Ouvre le fichier <code>config.js</code> et remplis ton SHEET_ID et API_KEY. C'est la seule chose à faire !</p>
+
+  <div class="step-row">
+    <div class="step-num">1</div>
+    <div class="step-content">
+      <h4>Obtenir ton Sheet ID</h4>
+      <p>Ouvre ton Google Sheet → copie l'ID dans l'URL entre <code>/d/</code> et <code>/edit</code> → colle dans <code>config.js</code></p>
+    </div>
+  </div>
+
+  <div class="step-row">
+    <div class="step-num">2</div>
+    <div class="step-content">
+      <h4>Créer une clé API Google (gratuit)</h4>
+      <p>Va sur <a href="https://console.cloud.google.com" target="_blank">console.cloud.google.com</a> → Active "Google Sheets API" → Credentials → Create API Key → colle dans <code>config.js</code></p>
+    </div>
+  </div>
+
+  <div class="step-row">
+    <div class="step-num">3</div>
+    <div class="step-content">
+      <h4>Déployer le Google Apps Script</h4>
+      <p>Va sur <a href="https://script.google.com" target="_blank">script.google.com</a> → Nouveau projet → Colle le code dans <code>sheets-api.js</code> → Déployer → Web App → Copie l'URL → Colle dans l'app</p>
+    </div>
+  </div>
+
+  <div class="step-row">
+    <div class="step-num">4</div>
+    <div class="step-content">
+      <h4>Héberger sur GitHub Pages (gratuit)</h4>
+      <p>Crée un repo GitHub → Upload les 3 fichiers → Settings → Pages → Source: main branch → Ton lien est prêt !</p>
+    </div>
+  </div>
+
+  <div class="form-row" style="margin-top:20px">
+    <label>URL du Google Apps Script (pour l'écriture)</label>
+    <input id="script-url" placeholder="https://script.google.com/macros/s/.../exec">
+  </div>
+  <button class="btn btn-primary btn-block" onclick="saveScriptUrl()">Enregistrer et continuer en mode démo</button>
+</div>`;
+}
+
+function saveScriptUrl() {
+  const url = $('script-url')?.value?.trim();
+  if (url) localStorage.setItem('CODAFRIK_SCRIPT_URL', url);
+  isConfigured = true;
+  loadDemoData();
+  renderPage();
+}
+
+// ── DONNÉES DÉMO ───────────────────────────────────────────
+function loadDemoData() {
+  orders = [
+    {id:'CMD-0001',shopify:'SHO-1001',date:'2025-01-14',client:'Amadou Diop',tel:'77 211 3344',pays:'Sénégal',ville:'Dakar',produit:'PRD001 - Brosse électrique',prix:25,qte:2,frais:3,closeur:'Fatou Ndiaye',livreur:'Mamadou Diallo',statut:'Livrée ✓',motif:'',source:'Facebook Ads'},
+    {id:'CMD-0002',shopify:'SHO-1002',date:'2025-01-15',client:'Fatoumata Koné',tel:'07 422 5566',pays:"Côte d'Ivoire",ville:'Abidjan',produit:'PRD003 - Montre LED',prix:22,qte:1,frais:4,closeur:'Aissatou Camara',livreur:'Koffi Traoré',statut:'En livraison',motif:'',source:'Instagram Ads'},
+    {id:'CMD-0003',shopify:'SHO-1003',date:'2025-01-15',client:'Yousra Benali',tel:'06 533 7788',pays:'Maroc',ville:'Casablanca',produit:'PRD005 - Écouteurs',prix:30,qte:1,frais:5,closeur:'',livreur:'',statut:'En attente',motif:'',source:'Facebook Ads'},
+    {id:'CMD-0004',shopify:'SHO-1004',date:'2025-01-15',client:'Seydou Bamba',tel:'70 644 9900',pays:'Mali',ville:'Bamako',produit:'PRD002 - Ceinture sport',prix:18,qte:3,frais:3.5,closeur:'Fatou Ndiaye',livreur:'',statut:'Confirmée',motif:'',source:'WhatsApp'},
+    {id:'CMD-0005',shopify:'SHO-1005',date:'2025-01-15',client:'Mariam Cissé',tel:'77 755 1122',pays:'Sénégal',ville:'Dakar',produit:'PRD004 - Sac à main',prix:35,qte:1,frais:3,closeur:'Mariam Coulibaly',livreur:'',statut:'Annulée',motif:'Client injoignable (3 tentatives)',source:'Facebook Ads'},
+    {id:'CMD-0006',shopify:'SHO-1006',date:'2025-01-14',client:'Kofi Mensah',tel:'07 811 2233',pays:"Côte d'Ivoire",ville:'Abidjan',produit:'PRD001 - Brosse électrique',prix:25,qte:1,frais:4,closeur:'Aissatou Camara',livreur:'Amara Koné',statut:'Refusée',motif:'Client nie avoir commandé',source:'Facebook Ads'},
+  ];
+}
+
+// ── INIT ───────────────────────────────────────────────────
+(async function init() {
+  // Si URL params indiquent un rôle → forcer ce rôle
+  if (ME_ROLE && ['closeur','livreur'].includes(ME_ROLE)) {
+    role = ME_ROLE;
+    tab  = ME_ROLE==='closeur' ? 'mes_cmd' : 'mes_liv';
+    document.querySelectorAll('.role-btn').forEach(b=>b.classList.remove('active'));
+    document.querySelector('.role-btn.r-'+role)?.classList.add('active');
+    // Cacher le sélecteur de rôle pour closeur/livreur
+    document.querySelector('.role-bar').style.display = 'none';
+  }
+
+  // Ton Sheet ID est déjà configuré dans config.js
+  isConfigured = true;
+  initAPI();
+
+  if (isConfigured && api) {
+    await loadData();
+  } else if (isConfigured) {
+    loadDemoData();
+    renderPage();
+  } else {
+    // Premier lancement → mode démo direct
+    isConfigured = true;
+    loadDemoData();
+    renderPage();
+  }
+
+  // Rafraîchissement automatique
+  if (api) {
+    refreshTimer = setInterval(loadData, CONFIG.REFRESH_INTERVAL);
+  }
+})();
+</script>
+</body>
+</html>
