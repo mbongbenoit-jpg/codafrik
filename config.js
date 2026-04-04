@@ -1,6 +1,6 @@
 // ═══════════════════════════════════════════════════════════
 //  CODAFRIK — Configuration (SANS clé API, SANS Google Cloud)
-//  Ton Sheet ID est déjà rempli ci-dessous — ne change rien 
+//  Ton Sheet ID est déjà rempli ci-dessous — ne change rien !
 // ═══════════════════════════════════════════════════════════
 
 const CONFIG = {
