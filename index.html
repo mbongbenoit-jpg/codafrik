@@ -150,6 +150,7 @@ code{background:var(--bg3);padding:2px 6px;border-radius:4px;font-size:11px;font
   <div class="logo">CodAfrik</div>
   <span class="currency-badge" onclick="openCurrencyModal()" title="Changer la devise">💱 <span id="cur-lbl">USD</span></span>
   <div class="sync-dot" id="sdot"></div>
+  <span style="font-size:10px;color:var(--text2);margin-left:2px" id="last-sync"></span>
 </div>
 <div class="role-bar" id="rbar">
   <button class="rb r-admin active" onclick="setRole('admin')">👑 Admin</button>
@@ -366,8 +367,13 @@ function openModal(html) {
 function closeModal(){document.getElementById('mct').innerHTML='';}
 function setSyncStatus(s) {
   const d=document.getElementById('sdot');
+  const lbl=document.getElementById('last-sync');
   if(!d)return;
   d.className='sync-dot'+(s==='load'?' load':s==='err'?' err':'');
+  if(s==='ok'&&lbl){
+    const now=new Date();
+    lbl.textContent=`${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}`;
+  }
 }
 
 // Mise à jour locale + Make webhook
@@ -838,7 +844,6 @@ function rLivreurView() {
     <div class="cd">📦 ${esc(o.produit)} ×${o.qte}</div>
     <div class="cod">
       <div><div class="cod-lbl">Montant COD à collecter</div><div class="cod-amt">${fmt(o.prix*o.qte)}</div></div>
-      <div style="text-align:right"><div class="cod-lbl">Ta commission</div><div style="font-size:18px;font-weight:700;color:var(--accent)">${fmt(o.frais)}</div></div>
     </div>
     <div class="arow">
       ${o.statut!=='En livraison'?`<button class="btn btn-w" onclick="livRoute('${esc(o.id)}')">🚗 En route</button>`:''}
@@ -1197,10 +1202,7 @@ function rBilanClo() {
   const liv = myOrders.filter(o=>o.statut==='Livrée ✓').length;
   const ann = myOrders.filter(o=>o.statut==='Annulée').length;
   const ca  = myOrders.filter(o=>o.statut==='Livrée ✓').reduce((s,o)=>s+o.prix*o.qte,0);
-  const comm = myOrders.filter(o=>o.statut==='Livrée ✓').reduce((s,o)=>{
-    const c = cfg.closeurs.find(x=>x.nom===moi);
-    return s + o.prix*o.qte*(c?.commission||3)/100;
-  },0);
+  // Commissions supprimées
   const taux = myOrders.length>0?Math.round(liv/myOrders.length*100):0;
 
   return `
@@ -1218,7 +1220,7 @@ function rBilanClo() {
   <div class="kpi" style="border-top-color:#6C63FF"><div class="kl">Total traitées</div><div class="kv">${myOrders.length}</div></div>
   <div class="kpi" style="border-top-color:#10B981"><div class="kl">Confirmées</div><div class="kv">${liv}</div></div>
   <div class="kpi" style="border-top-color:#EF4444"><div class="kl">Annulées</div><div class="kv">${ann}</div></div>
-  <div class="kpi" style="border-top-color:#F59E0B"><div class="kl">Ma commission</div><div class="kv">${fmt(comm)}</div></div>
+  <div class="kpi" style="border-top-color:#10B981"><div class="kl">Taux confirm.</div><div class="kv">${taux}%</div></div>
 </div>
 <div class="card">
   <div class="ch">📊 Taux de confirmation : <strong style="color:${taux>=75?'var(--green)':'var(--red)'}">${taux}%</strong></div>
@@ -1245,10 +1247,7 @@ function rBilanLiv() {
   const liv = myOrders.filter(o=>o.statut==='Livrée ✓').length;
   const ref = myOrders.filter(o=>o.statut==='Refusée').length;
   const ca  = myOrders.filter(o=>o.statut==='Livrée ✓').reduce((s,o)=>s+o.prix*o.qte,0);
-  const comm= myOrders.filter(o=>o.statut==='Livrée ✓').reduce((s,o)=>{
-    const l = cfg.livreurs.find(x=>x.nom===moi);
-    return s + (l?.frais||3.5);
-  },0);
+  // Commissions supprimées
   const taux = myOrders.length>0?Math.round(liv/myOrders.length*100):0;
 
   return `
@@ -1266,25 +1265,20 @@ function rBilanLiv() {
   <div class="kpi" style="border-top-color:#6C63FF"><div class="kl">Total assignées</div><div class="kv">${myOrders.length}</div></div>
   <div class="kpi" style="border-top-color:#10B981"><div class="kl">Livrées ✓</div><div class="kv">${liv}</div></div>
   <div class="kpi" style="border-top-color:#EF4444"><div class="kl">Refusées</div><div class="kv">${ref}</div></div>
-  <div class="kpi" style="border-top-color:#F59E0B"><div class="kl">Mes commissions</div><div class="kv">${fmt(comm)}</div></div>
+  <div class="kpi" style="border-top-color:#10B981"><div class="kl">Taux succès</div><div class="kv">${taux}%</div></div>
 </div>
 <div class="card">
   <div class="ch">📊 Taux de succès : <strong style="color:${taux>=80?'var(--green)':'var(--red)'}">${taux}%</strong></div>
   <div class="tw"><table>
-    <tr><th>ID</th><th>Date</th><th>Client</th><th>COD collecté</th><th>Commission</th><th>Résultat</th><th>Motif</th></tr>
-    ${myOrders.map(o=>{
-      const l = cfg.livreurs.find(x=>x.nom===moi);
-      const comm = o.statut==='Livrée ✓'?(l?.frais||3.5):0;
-      return `<tr>
+    <tr><th>ID</th><th>Date</th><th>Client</th><th>COD collecté</th><th>Résultat</th><th>Motif</th></tr>
+    ${myOrders.map(o=>`<tr>
         <td style="font-size:10px;color:var(--text2)">${esc(o.id)}</td>
         <td style="font-size:11px">${esc(o.date)}</td>
         <td>${esc(o.client)}</td>
         <td><strong>${o.statut==='Livrée ✓'?fmt(o.prix*o.qte):'—'}</strong></td>
-        <td style="color:var(--green)">${comm>0?fmt(comm):'—'}</td>
         <td>${badge(o.statut)}</td>
         <td style="font-size:11px;color:#FCA5A5">${esc(o.motif)||'—'}</td>
-      </tr>`;
-    }).join('')||'<tr><td colspan="7"><div class="empty">Aucune commande sur cette période</div></td></tr>'}
+      </tr>`).join('')||'<tr><td colspan="7"><div class="empty">Aucune commande sur cette période</div></td></tr>'}
   </table></div>
 </div>`;
 }
@@ -1342,7 +1336,7 @@ async function init() {
       orders=[...loc,...so]; cfg=c;
       saveLocal(); setSyncStatus('ok'); render();
     } catch(e){ setSyncStatus('err'); }
-  },60000);
+  },10000);
 }
 
 init();
