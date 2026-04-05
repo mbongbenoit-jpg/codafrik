@@ -169,7 +169,8 @@ const SHEET_ID = "1-UoulnD4iOFmZ9M_Thbm8qzeDdBGCFRjinbyIY0Syyc";
 
 // Make.com Webhook URL — pour écrire dans le Sheet
 // Laisse vide si pas encore configuré
-const MAKE_WEBHOOK = localStorage.getItem('CA_WEBHOOK') || "";
+// Webhook Make.com — intégré directement dans le code (invisible aux utilisateurs)
+const MAKE_WEBHOOK = "https://hook.us2.make.com/2nuna5ia2dus1i5iaj49b4ni7twq618u";
 
 // ══════════════════════════════════════════════════════════════
 //  DEVISE
@@ -696,29 +697,16 @@ async function creerCommande() {
 //  PARAMÈTRES
 // ══════════════════════════════════════════════════════════════
 function rParams() {
-  const wh=localStorage.getItem('CA_WEBHOOK')||'';
   return `<div class="card">
-    <div class="ch">⚙️ Configuration Make.com</div>
+    <div class="ch">⚙️ Statut du système</div>
     <div class="cb">
-      <div class="alert alert-ok">✅ Google Sheets connecté en lecture — ${orders.length} commandes, ${cfg.produits.length} produits</div>
-      <p style="font-size:12px;color:var(--text2);margin-bottom:14px;line-height:1.7">
-        Pour que l'app écrive dans le Sheet (statuts, nouvelles commandes), configure un webhook Make.com.
-        C'est gratuit jusqu'à 1000 opérations/mois.
+      <div class="alert alert-ok">✅ Google Sheets connecté — ${orders.length} commandes | ${cfg.produits.length} produits | ${cfg.closeurs.length} closeurs | ${cfg.livreurs.length} livreurs</div>
+      <div class="alert alert-ok">✅ Make.com webhook actif — synchronisation automatique</div>
+      <div class="alert alert-ok">✅ Shopify → Make.com → Sheet configuré</div>
+      <p style="font-size:12px;color:var(--text2);margin-top:10px;line-height:1.7">
+        Toutes les configurations sont intégrées dans l'application.<br>
+        Les données se synchronisent automatiquement toutes les 60 secondes.
       </p>
-      <div class="section-lbl">Guide Make.com (5 min)</div>
-      <div style="font-size:12px;color:var(--text2);line-height:1.8;margin-bottom:12px">
-        <strong style="color:var(--text)">1.</strong> Va sur <a href="https://make.com" target="_blank" style="color:var(--accent)">make.com</a> → Créer un scénario<br>
-        <strong style="color:var(--text)">2.</strong> Module 1 : <strong style="color:var(--text)">Webhooks → Custom webhook</strong> → Copie l'URL<br>
-        <strong style="color:var(--text)">3.</strong> Module 2 : <strong style="color:var(--text)">Google Sheets → Update Row</strong> (pour statuts)<br>
-        <strong style="color:var(--text)">4.</strong> Module 3 : <strong style="color:var(--text)">Google Sheets → Add Row</strong> (pour nouvelles commandes)<br>
-        <strong style="color:var(--text)">5.</strong> Colle l'URL du webhook ci-dessous → Enregistre
-      </div>
-      <div class="fr">
-        <label>URL Webhook Make.com</label>
-        <input id="p_wh" value="${esc(wh)}" placeholder="https://hook.eu1.make.com/xxxxx">
-      </div>
-      <button class="btn btn-p btn-bl" onclick="saveWebhook()">💾 Enregistrer</button>
-      <div id="p_msg" style="margin-top:8px;font-size:12px;color:var(--green);text-align:center"></div>
     </div>
   </div>
 
