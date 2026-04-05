@@ -347,17 +347,28 @@ const FORM_FIELDS = {
 
 async function callScript(payload) {
   try {
-    const body = new FormData();
-    body.append(FORM_FIELDS.action,  payload.action        || '');
-    body.append(FORM_FIELDS.cmdId,   payload.cmdId         || '');
-    body.append(FORM_FIELDS.statut,  payload.statut        || '');
-    body.append(FORM_FIELDS.motif,   payload.motif         || '');
-    body.append(FORM_FIELDS.closeur, payload.closeurNom    || '');
-    body.append(FORM_FIELDS.livreur, payload.livreurNom    || '');
-    body.append(FORM_FIELDS.data,    payload.data ? JSON.stringify(payload.data) : '');
+    // Construit l'URL avec les paramètres (méthode la plus fiable avec Google Forms)
+    const params = new URLSearchParams();
+    params.append(FORM_FIELDS.action,  payload.action     || '');
+    params.append(FORM_FIELDS.cmdId,   payload.cmdId      || '');
+    params.append(FORM_FIELDS.statut,  payload.statut     || '');
+    params.append(FORM_FIELDS.motif,   payload.motif      || '');
+    params.append(FORM_FIELDS.closeur, payload.closeurNom || '');
+    params.append(FORM_FIELDS.livreur, payload.livreurNom || '');
+    params.append(FORM_FIELDS.data,    payload.data ? JSON.stringify(payload.data) : '');
 
-    // Google Forms accepte les requêtes cross-origin en no-cors
-    await fetch(FORM_URL, { method: 'POST', body, mode: 'no-cors' });
+    // Envoie via une image invisible — contourne le CORS sans erreur
+    const img = new Image();
+    img.src = FORM_URL + '?' + params.toString();
+
+    // Double tentative via fetch no-cors
+    fetch(FORM_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+      body: params.toString()
+    }).catch(()=>{});
+
     return true;
   } catch(e) {
     console.error('Form error:', e);
@@ -369,6 +380,7 @@ async function callScript(payload) {
 function localUpdate(id, changes) {
   const o = orders.find(x=>x.id===id);
   if (o) Object.assign(o, changes);
+  // Aussi mettre à jour dans le Sheet via Form
   render();
 }
 
@@ -708,18 +720,26 @@ async function creerCommande() {
   const now     = new Date().toISOString().split('T')[0];
   const newId   = 'CMD-'+String(orders.length+1).padStart(4,'0');
 
-  // Ajout local immédiat
+  // Ajout local immédiat avec marqueur timestamp
   const newOrder = {
     id:newId, date:now, shopify:'', client, tel:document.getElementById('n_tel')?.value||'',
     pays, ville, produit:prodId, qte, prix, frais:3.5,
     closeur, livreur:'', statut:closeur?'Assignée closeur':'En attente',
     motif:'', source,
+    _local: true, _createdAt: Date.now(),
   };
   orders.unshift(newOrder);
 
-  // Envoi vers Sheet
-  const row = [newId,now,'',client,document.getElementById('n_tel')?.value||'',pays,ville,prodId,qte,'',prix,'',3.5,'',closeur,'','','','',closeur?'Assignée closeur':'En attente','','','',source];
+  // Envoi vers Sheet via Google Form
+  const tel = document.getElementById('n_tel')?.value||'';
+  const row = [
+    newId, now, '', client, tel, pays, ville, prodId, qte, '',
+    prix, '', 3.5, '', closeur, '', '', '', '',
+    closeur ? 'Assignée closeur' : 'En attente',
+    '', '', '', source
+  ];
   const ok = await callScript({action:'ADD_COMMANDE', data:row});
+  console.log('Commande envoyée au Form:', newId, 'closeur:', closeur);
 
   const msg = document.getElementById('n_msg');
   if(msg) msg.textContent = `✓ ${newId} créée ! Enregistrement dans Google Sheets en cours...`;
@@ -1051,14 +1071,22 @@ async function init() {
 
   render();
 
-  // Rafraîchissement auto toutes les 30s (seulement si pas closeur/livreur en train d'agir)
+  // Rafraîchissement auto toutes les 60s
+  // Garde les commandes locales créées récemment (moins de 3 minutes)
   setInterval(async()=>{
     try {
       const [o,c]=await Promise.all([loadOrders(),loadConfig()]);
-      orders=o; cfg=c; setSyncStatus('ok');
+      // Fusionne les commandes locales récentes avec celles du Sheet
+      const sheetIds = new Set(o.map(x=>x.id));
+      const localRecent = orders.filter(x=>
+        !sheetIds.has(x.id) && x._local &&
+        (Date.now() - x._createdAt) < 180000 // garde 3 minutes
+      );
+      orders = [...localRecent, ...o];
+      cfg=c; setSyncStatus('ok');
       render();
     } catch(e){ setSyncStatus('error'); }
-  }, 30000);
+  }, 60000);
 }
 
 init();
