@@ -396,14 +396,15 @@ const TABS = {
   admin:[
     {id:'dashboard',l:'📊 Dashboard'},
     {id:'commandes',l:'📋 Commandes'},
+    {id:'bilan',l:'📅 Bilan'},
     {id:'closeurs_p',l:'📞 Closeurs'},
     {id:'livreurs_p',l:'🚚 Livreurs'},
     {id:'motifs',l:'📉 Motifs'},
     {id:'nouveau',l:'➕ Nouveau'},
     {id:'params',l:'⚙️ Paramètres'},
   ],
-  closeur:[{id:'mes_cmd',l:'📋 Mes commandes'},{id:'histo_clo',l:'🕐 Historique'}],
-  livreur:[{id:'mes_liv',l:'🚚 Mes livraisons'},{id:'histo_liv',l:'✓ Historique'}],
+  closeur:[{id:'mes_cmd',l:'📋 Mes commandes'},{id:'histo_clo',l:'🕐 Historique'},{id:'bilan_clo',l:'📅 Mon bilan'}],
+  livreur:[{id:'mes_liv',l:'🚚 Mes livraisons'},{id:'histo_liv',l:'✓ Historique'},{id:'bilan_liv',l:'📅 Mon bilan'}],
 };
 
 function setRole(r) {
@@ -429,8 +430,9 @@ function render() {
   const map={
     dashboard:rDB,commandes:rCmd,closeurs_p:rClPerf,livreurs_p:rLivPerf,
     motifs:rMotifs,nouveau:rNew,params:rParams,
-    mes_cmd:rCloseurView,histo_clo:rHistoClo,
-    mes_liv:rLivreurView,histo_liv:rHistoLiv,
+    mes_cmd:rCloseurView,histo_clo:rHistoClo,bilan_clo:rBilanClo,
+    mes_liv:rLivreurView,histo_liv:rHistoLiv,bilan_liv:rBilanLiv,
+    bilan:rBilanAdmin,
   };
   document.getElementById('content').innerHTML=(map[tab]||rDB)();
 }
@@ -439,15 +441,30 @@ function render() {
 //  DASHBOARD
 // ══════════════════════════════════════════════════════════════
 function rDB() {
-  const tot=orders.length;
-  const liv=orders.filter(o=>o.statut==='Livrée ✓').length;
-  const ref=orders.filter(o=>o.statut==='Refusée').length;
-  const ann=orders.filter(o=>o.statut==='Annulée').length;
-  const ca=orders.filter(o=>o.statut==='Livrée ✓').reduce((s,o)=>s+o.prix*o.qte-o.frais,0);
+  const filtered = filterOrders(orders);
+  const tot=filtered.length;
+  const liv=filtered.filter(o=>o.statut==='Livrée ✓').length;
+  const ref=filtered.filter(o=>o.statut==='Refusée').length;
+  const ann=filtered.filter(o=>o.statut==='Annulée').length;
+  const ca=filtered.filter(o=>o.statut==='Livrée ✓').reduce((s,o)=>s+o.prix*o.qte-o.frais,0);
   const taux=tot>0?Math.round(liv/tot*100):0;
-  const enCours=orders.filter(o=>!['Livrée ✓','Refusée','Annulée'].includes(o.statut)).length;
+  const enCours=filtered.filter(o=>!['Livrée ✓','Refusée','Annulée'].includes(o.statut)).length;
   const C=cur();
+  const today = new Date().toISOString().split('T')[0];
+  const defFrom = new Date(new Date().setDate(1)).toISOString().split('T')[0];
   return `
+<div class="card" style="margin-bottom:10px">
+  <div class="cb" style="padding:10px 14px">
+    <div class="g2" style="margin-bottom:8px">
+      <div class="fr" style="margin-bottom:0"><label>Du</label><input type="date" id="f_from" value="${filterFrom||defFrom}"></div>
+      <div class="fr" style="margin-bottom:0"><label>Au</label><input type="date" id="f_to" value="${filterTo||today}"></div>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-p" style="flex:1;padding:7px" onclick="applyFilter()">📊 Filtrer</button>
+      <button class="btn" onclick="resetFilter()">✕ Tout</button>
+    </div>
+  </div>
+</div>
 <div class="kpi-grid">
   <div class="kpi" style="border-top-color:#6C63FF"><div class="kl">Commandes</div><div class="kv">${tot}</div><div class="ks">${enCours} en cours</div></div>
   <div class="kpi" style="border-top-color:#10B981"><div class="kl">CA net (${C.symbol}${curCode})</div><div class="kv">${fmt(ca)}</div><div class="ks">${liv} livrées</div></div>
@@ -512,6 +529,7 @@ function rCmd() {
         <td style="white-space:nowrap">
           <button class="btn btn-sm" onclick="openAssign('${esc(o.id)}')">✏️</button>
           <button class="btn btn-sm" onclick="openTL('${esc(o.id)}')">🕐</button>
+          <button class="btn btn-sm btn-d" onclick="confirmDelete('${esc(o.id)}')">🗑️</button>
         </td>
       </tr>`).join('')}
     </table></div>
@@ -1012,11 +1030,274 @@ async function submitMotif(type,id) {
 }
 
 // ══════════════════════════════════════════════════════════════
+//  ARCHIVAGE MENSUEL
+// ══════════════════════════════════════════════════════════════
+function getCurrentMonth() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+}
+
+function archiveAndReset() {
+  const month = getCurrentMonth();
+  const lastMonth = localStorage.getItem('CA_LAST_MONTH');
+  if (lastMonth && lastMonth !== month) {
+    // Archive le mois précédent
+    const archived = JSON.parse(localStorage.getItem('CA_ARCHIVE')||'{}');
+    archived[lastMonth] = orders.filter(o => !o._local);
+    localStorage.setItem('CA_ARCHIVE', JSON.stringify(archived));
+    // Remet à zéro les données locales
+    localStorage.removeItem('CA_ORDERS');
+    toast(`📅 Nouveau mois — données de ${lastMonth} archivées`);
+  }
+  localStorage.setItem('CA_LAST_MONTH', month);
+}
+
+function getArchivedMonths() {
+  try { return JSON.parse(localStorage.getItem('CA_ARCHIVE')||'{}'); }
+  catch(e) { return {}; }
+}
+
+// ── FILTRE PAR DATE ───────────────────────────────────────────
+let filterFrom = '', filterTo = '';
+
+function filterOrders(list) {
+  if (!filterFrom && !filterTo) return list;
+  return list.filter(o => {
+    if (!o.date) return true;
+    if (filterFrom && o.date < filterFrom) return false;
+    if (filterTo   && o.date > filterTo)   return false;
+    return true;
+  });
+}
+
+function applyFilter() {
+  filterFrom = document.getElementById('f_from')?.value || '';
+  filterTo   = document.getElementById('f_to')?.value   || '';
+  render();
+  toast(`Filtre appliqué : ${filterFrom||'début'} → ${filterTo||"aujourd'hui"}`);
+}
+
+function resetFilter() {
+  filterFrom = ''; filterTo = '';
+  const ff = document.getElementById('f_from');
+  const ft = document.getElementById('f_to');
+  if(ff) ff.value = ''; if(ft) ft.value = '';
+  render(); toast('Filtre effacé');
+}
+
+// ── SUPPRESSION COMMANDE ──────────────────────────────────────
+function confirmDelete(id) {
+  const o = orders.find(x=>x.id===id);
+  openModal(`
+    <h3>🗑️ Supprimer la commande ?</h3>
+    <p class="msub">${esc(o.id)} — ${esc(o.client)}</p>
+    <div style="background:var(--red2);border:1px solid rgba(239,68,68,.3);border-radius:var(--rs);padding:10px 12px;font-size:12px;color:#FCA5A5;margin-bottom:14px">
+      ⚠️ Cette action est irréversible. La commande sera supprimée de l'app et du Google Sheet.
+    </div>
+    <div class="mbtns">
+      <button class="btn" style="flex:1" onclick="closeModal()">Annuler</button>
+      <button class="btn btn-d" style="flex:1" onclick="deleteOrder('${esc(id)}')">Oui, supprimer</button>
+    </div>`);
+}
+
+async function deleteOrder(id) {
+  orders = orders.filter(x=>x.id!==id);
+  saveLocal();
+  await writeToSheet({action:'DELETE_COMMANDE', cmdId:id});
+  closeModal(); render();
+  toast('🗑️ Commande supprimée');
+}
+
+// ── BILAN ADMIN ───────────────────────────────────────────────
+function rBilanAdmin() {
+  const today = new Date().toISOString().split('T')[0];
+  const defFrom = filterFrom || new Date(new Date().setDate(1)).toISOString().split('T')[0];
+  const defTo   = filterTo   || today;
+  const filtered = filterOrders(orders);
+  const tot = filtered.length;
+  const liv = filtered.filter(o=>o.statut==='Livrée ✓').length;
+  const ref = filtered.filter(o=>o.statut==='Refusée').length;
+  const ann = filtered.filter(o=>o.statut==='Annulée').length;
+  const ca  = filtered.filter(o=>o.statut==='Livrée ✓').reduce((s,o)=>s+o.prix*o.qte-o.frais,0);
+  const taux = tot>0?Math.round(liv/tot*100):0;
+  const archive = getArchivedMonths();
+  const months  = Object.keys(archive).sort().reverse();
+
+  return `
+<div class="card">
+  <div class="ch">📅 Bilan par période</div>
+  <div class="cb">
+    <div class="g2" style="margin-bottom:10px">
+      <div class="fr"><label>Du</label><input type="date" id="f_from" value="${filterFrom||defFrom}"></div>
+      <div class="fr"><label>Au</label><input type="date" id="f_to" value="${filterTo||defTo}"></div>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-p" style="flex:1" onclick="applyFilter()">📊 Appliquer</button>
+      <button class="btn" onclick="resetFilter()">✕ Effacer</button>
+    </div>
+  </div>
+</div>
+
+<div class="kpi-grid">
+  <div class="kpi" style="border-top-color:#6C63FF"><div class="kl">Commandes</div><div class="kv">${tot}</div></div>
+  <div class="kpi" style="border-top-color:#10B981"><div class="kl">CA net</div><div class="kv">${fmt(ca)}</div></div>
+  <div class="kpi" style="border-top-color:#10B981"><div class="kl">Taux livraison</div><div class="kv">${taux}%</div></div>
+  <div class="kpi" style="border-top-color:#EF4444"><div class="kl">Refus+Annul.</div><div class="kv">${ref+ann}</div></div>
+</div>
+
+<div class="card">
+  <div class="ch">📊 Détail de la période</div>
+  <div class="tw"><table>
+    <tr><th>ID</th><th>Date</th><th>Client</th><th>Produit</th><th>Montant</th><th>Statut</th></tr>
+    ${filtered.length===0?'<tr><td colspan="6"><div class="empty">Aucune commande sur cette période</div></td></tr>':''}
+    ${filtered.map(o=>`<tr>
+      <td style="font-size:10px;color:var(--text2)">${esc(o.id)}</td>
+      <td style="font-size:11px">${esc(o.date)}</td>
+      <td>${esc(o.client)}</td>
+      <td style="font-size:11px">${esc(o.produit)}</td>
+      <td><strong>${fmt(o.prix*o.qte)}</strong></td>
+      <td>${badge(o.statut)}</td>
+    </tr>`).join('')}
+  </table></div>
+</div>
+
+${months.length>0?`<div class="card">
+  <div class="ch">🗂️ Archives mensuelles</div>
+  <div class="cb">
+    ${months.map(m=>{
+      const mOrders = archive[m];
+      const mLiv = mOrders.filter(o=>o.statut==='Livrée ✓').length;
+      const mCa  = mOrders.filter(o=>o.statut==='Livrée ✓').reduce((s,o)=>s+o.prix*o.qte-o.frais,0);
+      return `<div style="display:flex;justify-content:space-between;align-items:center;padding:10px;background:var(--bg3);border-radius:var(--rs);margin-bottom:6px">
+        <div><div style="font-weight:700">${m}</div><div style="font-size:11px;color:var(--text2)">${mOrders.length} commandes · ${mLiv} livrées</div></div>
+        <div style="text-align:right"><div style="font-weight:700;color:var(--green)">${fmt(mCa)}</div>
+          <button class="btn btn-sm" onclick="loadArchive('${m}')">Voir</button>
+        </div>
+      </div>`;
+    }).join('')}
+  </div>
+</div>`:''}`;
+}
+
+function loadArchive(month) {
+  const archive = getArchivedMonths();
+  orders = archive[month] || [];
+  filterFrom = month + '-01';
+  filterTo   = month + '-31';
+  switchTab('bilan');
+  toast(`📅 Archive ${month} chargée`);
+}
+
+// ── BILAN CLOSEUR ─────────────────────────────────────────────
+function rBilanClo() {
+  const moi = URL_NOM || cfg.closeurs[0]?.nom || '';
+  const today = new Date().toISOString().split('T')[0];
+  const defFrom = filterFrom || new Date(new Date().setDate(1)).toISOString().split('T')[0];
+  const myOrders = filterOrders(orders.filter(o=>o.closeur===moi));
+  const liv = myOrders.filter(o=>o.statut==='Livrée ✓').length;
+  const ann = myOrders.filter(o=>o.statut==='Annulée').length;
+  const ca  = myOrders.filter(o=>o.statut==='Livrée ✓').reduce((s,o)=>s+o.prix*o.qte,0);
+  const comm = myOrders.filter(o=>o.statut==='Livrée ✓').reduce((s,o)=>{
+    const c = cfg.closeurs.find(x=>x.nom===moi);
+    return s + o.prix*o.qte*(c?.commission||3)/100;
+  },0);
+  const taux = myOrders.length>0?Math.round(liv/myOrders.length*100):0;
+
+  return `
+<div class="card">
+  <div class="ch">📅 Mon bilan — ${esc(moi)}</div>
+  <div class="cb">
+    <div class="g2" style="margin-bottom:10px">
+      <div class="fr"><label>Du</label><input type="date" id="f_from" value="${filterFrom||defFrom}"></div>
+      <div class="fr"><label>Au</label><input type="date" id="f_to" value="${filterTo||today}"></div>
+    </div>
+    <button class="btn btn-p btn-bl" onclick="applyFilter()">📊 Appliquer le filtre</button>
+  </div>
+</div>
+<div class="kpi-grid">
+  <div class="kpi" style="border-top-color:#6C63FF"><div class="kl">Total traitées</div><div class="kv">${myOrders.length}</div></div>
+  <div class="kpi" style="border-top-color:#10B981"><div class="kl">Confirmées</div><div class="kv">${liv}</div></div>
+  <div class="kpi" style="border-top-color:#EF4444"><div class="kl">Annulées</div><div class="kv">${ann}</div></div>
+  <div class="kpi" style="border-top-color:#F59E0B"><div class="kl">Ma commission</div><div class="kv">${fmt(comm)}</div></div>
+</div>
+<div class="card">
+  <div class="ch">📊 Taux de confirmation : <strong style="color:${taux>=75?'var(--green)':'var(--red)'}">${taux}%</strong></div>
+  <div class="tw"><table>
+    <tr><th>ID</th><th>Date</th><th>Client</th><th>Montant</th><th>Statut</th><th>Motif</th></tr>
+    ${myOrders.map(o=>`<tr>
+      <td style="font-size:10px;color:var(--text2)">${esc(o.id)}</td>
+      <td style="font-size:11px">${esc(o.date)}</td>
+      <td>${esc(o.client)}</td>
+      <td>${fmt(o.prix*o.qte)}</td>
+      <td>${badge(o.statut)}</td>
+      <td style="font-size:11px;color:#FCA5A5">${esc(o.motif)||'—'}</td>
+    </tr>`).join('')||'<tr><td colspan="6"><div class="empty">Aucune commande sur cette période</div></td></tr>'}
+  </table></div>
+</div>`;
+}
+
+// ── BILAN LIVREUR ─────────────────────────────────────────────
+function rBilanLiv() {
+  const moi = URL_NOM || cfg.livreurs[0]?.nom || '';
+  const today = new Date().toISOString().split('T')[0];
+  const defFrom = filterFrom || new Date(new Date().setDate(1)).toISOString().split('T')[0];
+  const myOrders = filterOrders(orders.filter(o=>o.livreur===moi));
+  const liv = myOrders.filter(o=>o.statut==='Livrée ✓').length;
+  const ref = myOrders.filter(o=>o.statut==='Refusée').length;
+  const ca  = myOrders.filter(o=>o.statut==='Livrée ✓').reduce((s,o)=>s+o.prix*o.qte,0);
+  const comm= myOrders.filter(o=>o.statut==='Livrée ✓').reduce((s,o)=>{
+    const l = cfg.livreurs.find(x=>x.nom===moi);
+    return s + (l?.frais||3.5);
+  },0);
+  const taux = myOrders.length>0?Math.round(liv/myOrders.length*100):0;
+
+  return `
+<div class="card">
+  <div class="ch">📅 Mon bilan — ${esc(moi)}</div>
+  <div class="cb">
+    <div class="g2" style="margin-bottom:10px">
+      <div class="fr"><label>Du</label><input type="date" id="f_from" value="${filterFrom||defFrom}"></div>
+      <div class="fr"><label>Au</label><input type="date" id="f_to" value="${filterTo||today}"></div>
+    </div>
+    <button class="btn btn-p btn-bl" onclick="applyFilter()">📊 Appliquer le filtre</button>
+  </div>
+</div>
+<div class="kpi-grid">
+  <div class="kpi" style="border-top-color:#6C63FF"><div class="kl">Total assignées</div><div class="kv">${myOrders.length}</div></div>
+  <div class="kpi" style="border-top-color:#10B981"><div class="kl">Livrées ✓</div><div class="kv">${liv}</div></div>
+  <div class="kpi" style="border-top-color:#EF4444"><div class="kl">Refusées</div><div class="kv">${ref}</div></div>
+  <div class="kpi" style="border-top-color:#F59E0B"><div class="kl">Mes commissions</div><div class="kv">${fmt(comm)}</div></div>
+</div>
+<div class="card">
+  <div class="ch">📊 Taux de succès : <strong style="color:${taux>=80?'var(--green)':'var(--red)'}">${taux}%</strong></div>
+  <div class="tw"><table>
+    <tr><th>ID</th><th>Date</th><th>Client</th><th>COD collecté</th><th>Commission</th><th>Résultat</th><th>Motif</th></tr>
+    ${myOrders.map(o=>{
+      const l = cfg.livreurs.find(x=>x.nom===moi);
+      const comm = o.statut==='Livrée ✓'?(l?.frais||3.5):0;
+      return `<tr>
+        <td style="font-size:10px;color:var(--text2)">${esc(o.id)}</td>
+        <td style="font-size:11px">${esc(o.date)}</td>
+        <td>${esc(o.client)}</td>
+        <td><strong>${o.statut==='Livrée ✓'?fmt(o.prix*o.qte):'—'}</strong></td>
+        <td style="color:var(--green)">${comm>0?fmt(comm):'—'}</td>
+        <td>${badge(o.statut)}</td>
+        <td style="font-size:11px;color:#FCA5A5">${esc(o.motif)||'—'}</td>
+      </tr>`;
+    }).join('')||'<tr><td colspan="7"><div class="empty">Aucune commande sur cette période</div></td></tr>'}
+  </table></div>
+</div>`;
+}
+
+// ══════════════════════════════════════════════════════════════
 //  INIT
 // ══════════════════════════════════════════════════════════════
 async function init() {
   // Devise
   document.getElementById('cur-lbl').textContent = curCode;
+
+  // Vérification archivage mensuel
+  archiveAndReset();
 
   // Rôle via URL
   if(URL_ROLE&&['closeur','livreur'].includes(URL_ROLE)) {
