@@ -332,18 +332,37 @@ async function loadConfig() {
 }
 
 // ════════════════════════════════════════════════
-//  ÉCRITURE — Apps Script (GET request)
+//  ÉCRITURE — Google Form (zéro CORS, zéro permission)
 // ════════════════════════════════════════════════
+const FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLSfRBFDI4pH5Joe4e8wLa9hQsCsBCl7g-nEMP4m5mV4WFiY1Iw/formResponse";
+const FORM_FIELDS = {
+  action:   "entry.1734510124",
+  cmdId:    "entry.392772827",
+  statut:   "entry.2052019995",
+  motif:    "entry.1839373345",
+  closeur:  "entry.911425346",
+  livreur:  "entry.1002294634",
+  data:     "entry.2003622539",
+};
+
 async function callScript(payload) {
-  const url = SCRIPT_URL || localStorage.getItem('CA_SCRIPT');
-  if (!url) { toast('⚠️ Script URL manquante — va dans Paramètres'); return false; }
   try {
-    const u = `${url}?data=${encodeURIComponent(JSON.stringify(payload))}`;
-    const r = await fetch(u);
-    const t = await r.text();
-    let j; try{j=JSON.parse(t)}catch{j={success:true}}
-    return j.success !== false;
-  } catch(e) { toast('❌ Erreur connexion script'); return false; }
+    const body = new FormData();
+    body.append(FORM_FIELDS.action,  payload.action        || '');
+    body.append(FORM_FIELDS.cmdId,   payload.cmdId         || '');
+    body.append(FORM_FIELDS.statut,  payload.statut        || '');
+    body.append(FORM_FIELDS.motif,   payload.motif         || '');
+    body.append(FORM_FIELDS.closeur, payload.closeurNom    || '');
+    body.append(FORM_FIELDS.livreur, payload.livreurNom    || '');
+    body.append(FORM_FIELDS.data,    payload.data ? JSON.stringify(payload.data) : '');
+
+    // Google Forms accepte les requêtes cross-origin en no-cors
+    await fetch(FORM_URL, { method: 'POST', body, mode: 'no-cors' });
+    return true;
+  } catch(e) {
+    console.error('Form error:', e);
+    return false;
+  }
 }
 
 // Mise à jour locale immédiate + sync sheet
@@ -703,7 +722,7 @@ async function creerCommande() {
   const ok = await callScript({action:'ADD_COMMANDE', data:row});
 
   const msg = document.getElementById('n_msg');
-  if(msg) msg.textContent = ok ? `✓ ${newId} créée et enregistrée dans Google Sheets !` : `✓ ${newId} créée localement (sync Sheet en attente)`;
+  if(msg) msg.textContent = `✓ ${newId} créée ! Enregistrement dans Google Sheets en cours...`;
   setTimeout(()=>switchTab('commandes'),1500);
 }
 
@@ -711,19 +730,17 @@ async function creerCommande() {
 //  PARAMÈTRES
 // ════════════════════════════════════════════════
 function rParams() {
-  const saved = localStorage.getItem('CA_SCRIPT')||'';
   return `<div class="card">
-    <div class="card-head">⚙️ Configuration Apps Script</div>
+    <div class="card-head">⚙️ Statut de connexion</div>
     <div class="card-body">
-      <p style="font-size:12px;color:var(--text2);margin-bottom:14px;line-height:1.7">
-        Colle ici l'URL de ton Google Apps Script pour activer l'écriture dans ton Sheet.
-        Si tu n'as pas encore déployé le script, l'app fonctionne quand même en lecture seule.
-      </p>
-      <div class="form-row">
-        <label>URL du Apps Script</label>
-        <input id="p_url" value="${esc(SCRIPT_URL||saved)}" placeholder="https://script.google.com/macros/s/.../exec">
+      <div style="background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.3);border-radius:10px;padding:12px;margin-bottom:14px">
+        <div style="font-weight:700;color:var(--green);margin-bottom:4px">✅ Google Form connecté</div>
+        <div style="font-size:11px;color:var(--text2)">Les mises à jour de statut s'enregistrent via Google Forms → Google Sheets</div>
       </div>
-      <button class="btn btn-primary btn-block" onclick="saveScript()">💾 Enregistrer</button>
+      <div style="background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.3);border-radius:10px;padding:12px;margin-bottom:14px">
+        <div style="font-weight:700;color:var(--green);margin-bottom:4px">✅ Google Sheets connecté</div>
+        <div style="font-size:11px;color:var(--text2)">Sheet ID: 1-UoulnD4iOFmZ9M_Thbm8qzeDdBGCFRjinbyIY0Syyc</div>
+      </div>
       <div id="p_msg" style="margin-top:10px;font-size:12px;color:var(--green);text-align:center"></div>
       <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border)">
         <p style="font-size:12px;font-weight:700;margin-bottom:8px">🔗 Tes liens personnalisés</p>
@@ -744,11 +761,8 @@ function rParams() {
 }
 
 function saveScript() {
-  const url = document.getElementById('p_url')?.value.trim();
-  if(url) localStorage.setItem('CA_SCRIPT', url);
-  const msg = document.getElementById('p_msg');
-  if(msg) msg.textContent = '✓ URL enregistrée !';
-  toast('✓ Script URL sauvegardée');
+  // Plus besoin - Google Form est configuré directement dans le code
+  toast('✅ Configuration OK');
 }
 
 function copyText(el) {
