@@ -265,7 +265,7 @@ const C = {
 };
 
 async function loadOrders() {
-  const rows = await fetchSheet('COMMANDES');
+  const rows = await fetchSheet('📋 COMMANDES');
   return rows.slice(4)
     .filter(r => r[C.CLIENT]?.trim())
     .map(r => ({
@@ -289,7 +289,7 @@ async function loadOrders() {
 }
 
 async function loadConfig() {
-  const rows = await fetchSheet('CONFIGURATION');
+  const rows = await fetchSheet('⚙️ CONFIGURATION');
   const produits=[], paysVilles=[], livreurs=[], closeurs=[];
   for (const r of rows) {
     const id = (r[0]||'').trim();
