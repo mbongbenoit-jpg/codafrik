@@ -1343,3 +1343,258 @@ init();
 </script>
 </body>
 </html>
+ ×${o.qte}</div>
+    <div class="cod">
+      <div><div class="cod-l">Montant COD à collecter</div><div class="cod-a">${fmt(o.prix*o.qte)}</div></div>
+      <div style="text-align:right"><div class="cod-l">Ta commission</div><div style="font-size:18px;font-weight:700;color:var(--ac)">${fmt(o.frais)}</div></div>
+    </div>
+    <div class="arow">
+      ${o.statut!=='En livraison'?`<button class="btn bw" onclick="updSt('${esc(o.id)}','En livraison');toast('🚗 En route')">🚗 En route</button>`:''}
+      <button class="btn bs" style="flex:1" onclick="updSt('${esc(o.id)}','Livrée ✓');toast('✅ Livraison confirmée !')">✓ Livrée & COD collecté</button>
+      <button class="btn bd" onclick="openMotif('ref','${esc(o.id)}')">✕ Refusée</button>
+    </div>
+  </div>`).join('')}`;
+}
+
+// ════════════════════════════════════════════════
+//  BILANS
+// ════════════════════════════════════════════════
+function bilanFiltre(list){
+  const today=new Date().toISOString().split('T')[0];
+  const df=new Date(new Date().setDate(1)).toISOString().split('T')[0];
+  return `<div class="card"><div class="ch">📅 Filtrer la période</div><div class="cb">
+    <div class="g2" style="margin-bottom:10px">
+      <div class="fr"><label>Du</label><input type="date" id="ff" value="${filterFrom||df}"></div>
+      <div class="fr"><label>Au</label><input type="date" id="ft" value="${filterTo||today}"></div>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="btn bp" style="flex:1" onclick="applyF()">📊 Appliquer</button>
+      <button class="btn" onclick="resetF()">✕ Tout le mois</button>
+    </div>
+  </div></div>`;
+}
+
+function rBilanC(){
+  const moi=URL_NOM||cfg.closeurs[0]?.nom||'';
+  const fd=filtered(orders.filter(o=>o.closeur===moi));
+  const liv=fd.filter(o=>o.statut==='Livrée ✓').length;
+  const ann=fd.filter(o=>o.statut==='Annulée').length;
+  const ca=fd.filter(o=>o.statut==='Livrée ✓').reduce((s,o)=>s+o.prix*o.qte,0);
+  const cl=cfg.closeurs.find(x=>x.nom===moi);
+  const comm=fd.filter(o=>o.statut==='Livrée ✓').reduce((s,o)=>s+o.prix*o.qte*(cl?.commission||3)/100,0);
+  const tx=fd.length>0?Math.round(liv/fd.length*100):0;
+  return bilanFiltre()+`
+  <div class="kg">
+    <div class="kpi" style="border-top-color:#6C63FF"><div class="kl">Total</div><div class="kv">${fd.length}</div></div>
+    <div class="kpi" style="border-top-color:#10B981"><div class="kl">Confirmées</div><div class="kv">${liv}</div></div>
+    <div class="kpi" style="border-top-color:#EF4444"><div class="kl">Annulées</div><div class="kv">${ann}</div></div>
+    <div class="kpi" style="border-top-color:#F59E0B"><div class="kl">Ma commission</div><div class="kv">${fmt(comm)}</div></div>
+  </div>
+  <div class="card"><div class="ch">Taux de confirmation : <strong style="color:${tx>=75?'var(--gr)':'var(--re)'}">${tx}%</strong></div>
+  <div class="tw"><table>
+    <tr><th>ID</th><th>Date</th><th>Client</th><th>Montant</th><th>Statut</th><th>Motif</th></tr>
+    ${fd.map(o=>`<tr>
+      <td style="font-size:10px;color:var(--t2)">${esc(o.id)}</td>
+      <td style="font-size:11px">${esc(o.date)}</td><td>${esc(o.client)}</td>
+      <td>${fmt(o.prix*o.qte)}</td><td>${badge(o.statut)}</td>
+      <td style="font-size:11px;color:#FCA5A5">${esc(o.motif)||'—'}</td>
+    </tr>`).join('')||'<tr><td colspan="6"><div class="empty">Aucune donnée</div></td></tr>'}
+  </table></div></div>`;
+}
+
+function rBilanL(){
+  const moi=URL_NOM||cfg.livreurs[0]?.nom||'';
+  const fd=filtered(orders.filter(o=>o.livreur===moi));
+  const liv=fd.filter(o=>o.statut==='Livrée ✓').length;
+  const ref=fd.filter(o=>o.statut==='Refusée').length;
+  const lv=cfg.livreurs.find(x=>x.nom===moi);
+  const comm=fd.filter(o=>o.statut==='Livrée ✓').reduce((s,o)=>s+(lv?.frais||3.5),0);
+  const tx=fd.length>0?Math.round(liv/fd.length*100):0;
+  return bilanFiltre()+`
+  <div class="kg">
+    <div class="kpi" style="border-top-color:#6C63FF"><div class="kl">Total</div><div class="kv">${fd.length}</div></div>
+    <div class="kpi" style="border-top-color:#10B981"><div class="kl">Livrées</div><div class="kv">${liv}</div></div>
+    <div class="kpi" style="border-top-color:#EF4444"><div class="kl">Refusées</div><div class="kv">${ref}</div></div>
+    <div class="kpi" style="border-top-color:#F59E0B"><div class="kl">Mes commissions</div><div class="kv">${fmt(comm)}</div></div>
+  </div>
+  <div class="card"><div class="ch">Taux de succès : <strong style="color:${tx>=80?'var(--gr)':'var(--re)'}">${tx}%</strong></div>
+  <div class="tw"><table>
+    <tr><th>ID</th><th>Date</th><th>Client</th><th>COD</th><th>Commission</th><th>Résultat</th></tr>
+    ${fd.map(o=>`<tr>
+      <td style="font-size:10px;color:var(--t2)">${esc(o.id)}</td>
+      <td style="font-size:11px">${esc(o.date)}</td><td>${esc(o.client)}</td>
+      <td><strong>${o.statut==='Livrée ✓'?fmt(o.prix*o.qte):'—'}</strong></td>
+      <td style="color:var(--gr)">${o.statut==='Livrée ✓'?fmt(lv?.frais||3.5):'—'}</td>
+      <td>${badge(o.statut)}</td>
+    </tr>`).join('')||'<tr><td colspan="6"><div class="empty">Aucune donnée</div></td></tr>'}
+  </table></div></div>`;
+}
+
+// ════════════════════════════════════════════════
+//  HISTORIQUES
+// ════════════════════════════════════════════════
+function rHClo(){
+  const moi=URL_NOM||cfg.closeurs[0]?.nom||'';
+  const hist=orders.filter(o=>o.closeur===moi&&['Livrée ✓','Annulée','Refusée'].includes(o.statut));
+  return `<div class="card"><div class="ch">🕐 Historique</div><div class="tw"><table>
+    <tr><th>ID</th><th>Client</th><th>Montant</th><th>Statut</th><th>Motif</th></tr>
+    ${hist.map(o=>`<tr><td style="font-size:10px;color:var(--t2)">${esc(o.id)}</td><td>${esc(o.client)}</td>
+      <td>${fmt(o.prix*o.qte)}</td><td>${badge(o.statut)}</td>
+      <td style="font-size:11px;color:#FCA5A5">${esc(o.motif)||'—'}</td></tr>`).join('')
+    ||'<tr><td colspan="5"><div class="empty">Aucun historique</div></td></tr>'}
+  </table></div></div>`;
+}
+function rHLiv(){
+  const moi=URL_NOM||cfg.livreurs[0]?.nom||'';
+  const hist=orders.filter(o=>o.livreur===moi&&['Livrée ✓','Refusée'].includes(o.statut));
+  return `<div class="card"><div class="ch">✓ Historique livraisons</div><div class="tw"><table>
+    <tr><th>ID</th><th>Client</th><th>Montant</th><th>Résultat</th><th>Motif</th></tr>
+    ${hist.map(o=>`<tr><td style="font-size:10px;color:var(--t2)">${esc(o.id)}</td><td>${esc(o.client)}</td>
+      <td><strong>${fmt(o.prix*o.qte)}</strong></td><td>${badge(o.statut)}</td>
+      <td style="font-size:11px;color:#FCA5A5">${esc(o.motif)||'—'}</td></tr>`).join('')
+    ||'<tr><td colspan="5"><div class="empty">Aucun historique</div></td></tr>'}
+  </table></div></div>`;
+}
+
+// ════════════════════════════════════════════════
+//  MODALS
+// ════════════════════════════════════════════════
+function openAsgn(id){
+  const o=orders.find(x=>x.id===id);
+  const lvs=cfg.livreurs.filter(l=>!o.ville||l.ville===o.ville);
+  openModal(`<h3>✏️ Modifier — ${esc(id)}</h3>
+    <p class="msub">${esc(o.client)} · ${esc(o.ville)} · ${badge(o.statut)}</p>
+    <div class="fr"><label>Closeur</label><select id="m_cl"><option value="">— Non assigné —</option>
+      ${cfg.closeurs.map(c=>`<option ${o.closeur===c.nom?'selected':''}>${c.nom}</option>`).join('')}</select></div>
+    <div class="fr"><label>Livreur</label><select id="m_lv"><option value="">— Non assigné —</option>
+      ${(lvs.length?lvs:cfg.livreurs).map(l=>`<option ${o.livreur===l.nom?'selected':''}>${l.nom}</option>`).join('')}</select></div>
+    <div class="fr"><label>Statut</label><select id="m_st">${Object.keys(STM).map(s=>`<option ${o.statut===s?'selected':''}>${s}</option>`).join('')}</select></div>
+    <div class="mbtns">
+      <button class="btn" style="flex:1" onclick="closeModal()">Annuler</button>
+      <button class="btn bp" style="flex:1" onclick="saveAsgn('${esc(id)}')">Enregistrer</button>
+    </div>`);
+}
+async function saveAsgn(id){
+  const cl=document.getElementById('m_cl')?.value;
+  const lv=document.getElementById('m_lv')?.value;
+  const st=document.getElementById('m_st')?.value;
+  const o=orders.find(x=>x.id===id);
+  if(cl&&cl!==o.closeur) await asgClo(id,cl);
+  if(lv&&lv!==o.livreur) await asgLiv(id,lv);
+  if(st&&st!==o.statut)  await updSt(id,st,'');
+  closeModal();toast('✓ Mis à jour');
+}
+function openAsgLiv(id){
+  const o=orders.find(x=>x.id===id);
+  const lvs=cfg.livreurs.filter(l=>!o.ville||l.ville===o.ville);
+  openModal(`<h3>🚚 Assigner livreur</h3>
+    <p class="msub">${esc(o.client)} · ${esc(o.ville)}</p>
+    <div class="fr"><label>Livreur</label><select id="m_lv2">
+      ${(lvs.length?lvs:cfg.livreurs).map(l=>`<option>${l.nom}</option>`).join('')}</select></div>
+    <div class="mbtns">
+      <button class="btn" style="flex:1" onclick="closeModal()">Annuler</button>
+      <button class="btn bp" style="flex:1" onclick="doAsgLiv('${esc(id)}')">Assigner</button>
+    </div>`);
+}
+async function doAsgLiv(id){const lv=document.getElementById('m_lv2')?.value;await asgLiv(id,lv);closeModal();toast(`🚚 Assigné à ${lv}`);}
+
+function openTL(id){
+  const o=orders.find(x=>x.id===id);
+  const steps=[
+    {c:'#6C63FF',t:'Commande créée',d:o.date},
+    o.closeur&&{c:'#F59E0B',t:'Closeur assigné',d:o.closeur},
+    ['Confirmée','Assignée livreur','En livraison','Livrée ✓'].includes(o.statut)&&{c:'#10B981',t:'Confirmée'},
+    o.livreur&&{c:'#F97316',t:'Livreur assigné',d:o.livreur},
+    ['En livraison','Livrée ✓'].includes(o.statut)&&{c:'#F59E0B',t:'En livraison'},
+    o.statut==='Livrée ✓'&&{c:'#10B981',t:'✓ Livrée — COD collecté'},
+    o.motif&&{c:'#EF4444',t:o.statut,d:o.motif},
+  ].filter(Boolean);
+  openModal(`<h3>🕐 Suivi — ${esc(id)}</h3>
+    <p class="msub">${esc(o.client)} · ${esc(o.produit)} · <strong>${fmt(o.prix*o.qte)}</strong></p>
+    ${steps.map(s=>`<div style="display:flex;gap:10px;margin-bottom:12px">
+      <div style="width:10px;height:10px;border-radius:50%;background:${s.c};flex-shrink:0;margin-top:3px"></div>
+      <div style="font-size:12px;color:var(--t2)"><strong style="color:var(--t)">${esc(s.t)}</strong>${s.d?`<br>${esc(s.d)}`:''}</div>
+    </div>`).join('')}
+    <div style="text-align:center;margin:8px 0">${badge(o.statut)}</div>
+    ${o.motif?`<div style="background:var(--re2);border-radius:var(--rs);padding:8px 10px;font-size:12px;color:#FCA5A5"><strong style="display:block;font-size:10px;text-transform:uppercase;margin-bottom:2px;opacity:.7">Motif</strong>${esc(o.motif)}</div>`:''}
+    <div class="mbtns"><button class="btn" style="flex:1" onclick="closeModal()">Fermer</button></div>`);
+}
+
+function confirmDel(id){
+  const o=orders.find(x=>x.id===id);
+  openModal(`<h3>🗑️ Supprimer ?</h3>
+    <p class="msub">${esc(o.id)} — ${esc(o.client)}</p>
+    <div style="background:var(--re2);border:1px solid rgba(239,68,68,.3);border-radius:var(--rs);padding:10px;font-size:12px;color:#FCA5A5;margin-bottom:14px">⚠️ Action irréversible — supprimée de l'app et du Sheet.</div>
+    <div class="mbtns">
+      <button class="btn" style="flex:1" onclick="closeModal()">Annuler</button>
+      <button class="btn bd" style="flex:1" onclick="delOrder('${esc(id)}')">Supprimer</button>
+    </div>`);
+}
+async function delOrder(id){
+  orders=orders.filter(x=>x.id!==id);
+  await post({action:'DELETE_COMMANDE',cmdId:id});
+  closeModal();render();toast('🗑️ Supprimée');
+}
+
+function openMotif(type,id){
+  const o=orders.find(x=>x.id===id);
+  const mo=type==='ann'?MA:MR;
+  openModal(`<h3>${type==='ann'?'✕ Annuler':'✕ Marquer refusée'}</h3>
+    <p class="msub">${esc(o.id)} — ${esc(o.client)}</p>
+    <div class="mopts">${mo.map(m=>`<button class="mopt" onclick="selMot(this,'${esc(m)}')">${esc(m)}</button>`).join('')}</div>
+    <div class="fr" id="ar" style="display:none"><label>Préciser</label><textarea id="ma" placeholder="Décrivez..."></textarea></div>
+    <div class="fr"><label>Commentaire</label><textarea id="mc" style="min-height:54px" placeholder="Infos supplémentaires..."></textarea></div>
+    <div class="mbtns">
+      <button class="btn" style="flex:1" onclick="closeModal()">Retour</button>
+      <button class="btn bd" style="flex:1" onclick="submitMot('${type}','${esc(id)}')">Enregistrer</button>
+    </div>`);
+}
+function selMot(btn,val){
+  document.querySelectorAll('.mopt').forEach(b=>b.classList.remove('sel'));
+  btn.classList.add('sel');btn.dataset.val=val;
+  const ar=document.getElementById('ar');if(ar) ar.style.display=val==='Autre'?'block':'none';
+}
+async function submitMot(type,id){
+  const sel=document.querySelector('.mopt.sel');
+  if(!sel){toast('⚠️ Choisis un motif');return;}
+  const base=sel.dataset.val;
+  const autre=document.getElementById('ma')?.value||'';
+  const comment=document.getElementById('mc')?.value||'';
+  const motif=(base==='Autre'?autre||'Autre':base)+(comment?` — ${comment}`:'');
+  await updSt(id,type==='ann'?'Annulée':'Refusée',motif);
+  closeModal();toast('Motif enregistré');
+}
+
+// ════════════════════════════════════════════════
+//  INIT
+// ════════════════════════════════════════════════
+async function init(){
+  document.getElementById('clbl').textContent=curCode;
+  // Rôle URL
+  if(URL_ROLE&&['closeur','livreur'].includes(URL_ROLE)){
+    role=URL_ROLE;tab=role==='closeur'?'mes_cmd':'mes_liv';
+    document.getElementById('rbar').style.display='none';
+  }
+  setSS('load');
+  // Charge config
+  try{cfg=await loadConfig();console.log(`✅ Config: ${cfg.produits.length}P ${cfg.closeurs.length}C ${cfg.livreurs.length}L`);}
+  catch(e){console.error('Config:',e.message);}
+  // Charge commandes
+  try{
+    orders=await loadOrders();
+    setSS('ok');
+    console.log(`✅ ${orders.length} commandes`);
+  }catch(e){setSS('err');console.error('Orders:',e.message);}
+  render();
+  // Refresh toutes les 60s — toujours depuis le Sheet (source unique)
+  setInterval(async()=>{
+    try{
+      const [o,c]=await Promise.all([loadOrders(),loadConfig()]);
+      orders=o;cfg=c;setSS('ok');render();
+    }catch(e){setSS('err');}
+  },60000);
+}
+init();
+</script>
+</body>
+</html>
