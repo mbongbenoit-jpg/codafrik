@@ -1,0 +1,1600 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#0A0A0F">
+<title>CodAfrik</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --bg:#0A0A0F;--bg2:#12121A;--bg3:#1C1C28;
+  --border:rgba(255,255,255,.07);--border2:rgba(255,255,255,.13);
+  --text:#F0F0F8;--text2:#7878A0;--text3:#444460;
+  --accent:#6C63FF;--accent2:#4F46E5;
+  --green:#10B981;--green2:rgba(16,185,129,.15);
+  --amber:#F59E0B;--amber2:rgba(245,158,11,.15);
+  --red:#EF4444;--red2:rgba(239,68,68,.15);
+  --blue:#3B82F6;--blue2:rgba(59,130,246,.15);
+  --r:12px;--rs:8px;
+}
+html,body{height:100%;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);font-size:14px}
+.app{display:flex;flex-direction:column;min-height:100vh}
+
+/* TOP BAR */
+.topbar{background:var(--bg2);border-bottom:1px solid var(--border);padding:11px 16px;display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:50}
+.logo{font-size:15px;font-weight:700;background:linear-gradient(135deg,#6C63FF,#A78BFA);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.currency-badge{background:var(--bg3);border:1px solid var(--border2);border-radius:6px;padding:3px 8px;font-size:11px;font-weight:600;color:var(--text2);cursor:pointer;margin-left:4px}
+.sync-dot{width:7px;height:7px;border-radius:50%;background:var(--green);margin-left:auto}
+.sync-dot.err{background:var(--red)}
+.sync-dot.load{background:var(--amber);animation:blink .8s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* ROLE BAR */
+.role-bar{background:var(--bg);border-bottom:1px solid var(--border);display:flex;padding:5px;gap:4px}
+.rb{flex:1;padding:8px 4px;border-radius:var(--rs);border:none;background:transparent;color:var(--text2);cursor:pointer;font-size:12px;font-weight:600;font-family:inherit;transition:all .2s}
+.rb.active{color:#fff}
+.rb.r-admin.active{background:var(--accent2)}
+.rb.r-closeur.active{background:#B45309}
+.rb.r-livreur.active{background:#065F46}
+
+/* NAV */
+.nav{background:var(--bg2);border-bottom:1px solid var(--border);display:flex;overflow-x:auto;scrollbar-width:none}
+.nav::-webkit-scrollbar{display:none}
+.nb{padding:10px 13px;border:none;background:transparent;color:var(--text2);cursor:pointer;font-size:12px;font-weight:500;border-bottom:2px solid transparent;white-space:nowrap;font-family:inherit;transition:all .15s}
+.nb.active{color:var(--accent);border-bottom-color:var(--accent)}
+.pill{background:var(--red);color:#fff;border-radius:9px;font-size:10px;padding:1px 5px;margin-left:3px;vertical-align:middle}
+
+/* CONTENT */
+.content{padding:12px;flex:1;max-width:740px;margin:0 auto;width:100%}
+
+/* KPI */
+.kpi-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+.kpi{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:14px;border-top:3px solid}
+.kl{font-size:11px;color:var(--text2);margin-bottom:3px}
+.kv{font-size:22px;font-weight:700}
+.ks{font-size:11px;color:var(--text2);margin-top:2px}
+
+/* CARD */
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);margin-bottom:10px;overflow:hidden}
+.ch{padding:11px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;font-weight:600;font-size:13px;flex-wrap:wrap}
+.cb{padding:14px}
+
+/* TABLE */
+.tw{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table{width:100%;border-collapse:collapse;min-width:460px}
+th{padding:8px 10px;text-align:left;font-size:11px;font-weight:600;color:var(--text2);background:var(--bg3);border-bottom:1px solid var(--border)}
+td{padding:8px 10px;border-bottom:1px solid var(--border);font-size:12px;vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:var(--bg3)}
+
+/* STATUS */
+.st{display:inline-block;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:600;white-space:nowrap}
+.s0{background:var(--blue2);color:#93C5FD}
+.s1{background:rgba(108,99,255,.15);color:#A78BFA}
+.s2{background:var(--amber2);color:#FCD34D}
+.s3{background:var(--green2);color:#6EE7B7}
+.s4{background:rgba(251,146,60,.15);color:#FDBA74}
+.s5{background:var(--amber2);color:#FCD34D}
+.s6{background:rgba(16,185,129,.2);color:#34D399;font-weight:700}
+.s7{background:var(--red2);color:#FCA5A5}
+.s8{background:rgba(100,100,120,.2);color:#9CA3AF}
+
+/* BUTTONS */
+.btn{padding:7px 12px;border-radius:var(--rs);border:1px solid var(--border2);background:var(--bg3);cursor:pointer;font-size:12px;color:var(--text);font-family:inherit;font-weight:500;transition:all .15s}
+.btn:active{transform:scale(.97)}
+.btn-p{background:var(--accent2);border-color:var(--accent);color:#fff}
+.btn-s{background:var(--green2);border-color:rgba(16,185,129,.4);color:#6EE7B7}
+.btn-w{background:var(--amber2);border-color:rgba(245,158,11,.4);color:#FCD34D}
+.btn-d{background:var(--red2);border-color:rgba(239,68,68,.4);color:#FCA5A5}
+.btn-sm{padding:3px 8px;font-size:11px}
+.btn-bl{width:100%;justify-content:center;padding:12px;border-radius:var(--r)}
+.arow{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
+
+/* FORM */
+.fr{margin-bottom:10px}
+.fr label{font-size:10px;color:var(--text2);display:block;margin-bottom:4px;font-weight:700;text-transform:uppercase;letter-spacing:.5px}
+.fr input,.fr select,.fr textarea{width:100%;padding:9px 11px;border-radius:var(--rs);border:1px solid var(--border2);background:var(--bg3);color:var(--text);font-family:inherit;font-size:13px;transition:border-color .15s;-webkit-appearance:none}
+.fr input:focus,.fr select:focus,.fr textarea:focus{outline:none;border-color:var(--accent)}
+.fr textarea{resize:none;min-height:68px}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+
+/* CMD CARD */
+.cc{background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);padding:14px;margin-bottom:10px}
+.ct{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px}
+.ci{font-size:10px;color:var(--text2);font-weight:700;letter-spacing:.5px}
+.cd{font-size:12px;color:var(--text2);margin-bottom:4px}
+.cd strong{color:var(--text)}
+.ctel{font-size:14px;font-weight:700;color:var(--accent);text-decoration:none;display:block;margin:6px 0}
+.cod{background:var(--bg2);border:1px solid var(--border);border-radius:var(--rs);padding:11px;margin:10px 0;display:flex;justify-content:space-between;align-items:center}
+.cod-amt{font-size:26px;font-weight:800;color:var(--green)}
+.cod-lbl{font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.5px}
+
+/* MODAL */
+.mbg{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:100;display:flex;align-items:flex-end;justify-content:center;backdrop-filter:blur(3px)}
+.modal{background:var(--bg2);border:1px solid var(--border2);border-radius:20px 20px 0 0;padding:18px 16px 34px;width:100%;max-width:500px;max-height:88vh;overflow-y:auto}
+.mh{width:38px;height:4px;background:var(--border2);border-radius:2px;margin:0 auto 16px}
+.modal h3{font-size:14px;font-weight:700;margin-bottom:5px}
+.msub{font-size:12px;color:var(--text2);margin-bottom:14px}
+.mbtns{display:flex;gap:8px;margin-top:14px}
+
+/* MOTIF */
+.mopts{display:grid;gap:5px;margin-bottom:8px}
+.mopt{padding:9px 11px;border-radius:var(--rs);border:1px solid var(--border2);background:var(--bg3);cursor:pointer;font-size:12px;color:var(--text);text-align:left;width:100%;font-family:inherit;transition:all .15s}
+.mopt.sel{border-color:var(--accent);background:rgba(108,99,255,.15);color:#A78BFA}
+
+/* MISC */
+.empty{text-align:center;padding:28px;color:var(--text2);font-size:13px}
+.loader{text-align:center;padding:36px;color:var(--text2);font-size:13px}
+.spin{width:26px;height:26px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;margin:0 auto 10px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:var(--bg3);border:1px solid var(--border2);color:var(--text);padding:9px 18px;border-radius:var(--r);font-size:13px;z-index:200;white-space:nowrap;animation:tIn .25s ease;box-shadow:0 8px 32px rgba(0,0,0,.5)}
+@keyframes tIn{from{transform:translateX(-50%) translateY(14px);opacity:0}}
+.badge{padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600}
+.bar-bg{background:var(--bg3);border-radius:3px;height:5px;margin-top:3px}
+.bar{height:5px;border-radius:3px;transition:width .5s}
+.alert{border-radius:var(--rs);padding:10px 12px;font-size:12px;margin-bottom:10px}
+.alert-ok{background:var(--green2);color:#6EE7B7;border:1px solid rgba(16,185,129,.3)}
+.alert-warn{background:var(--amber2);color:#FCD34D;border:1px solid rgba(245,158,11,.3)}
+code{background:var(--bg3);padding:2px 6px;border-radius:4px;font-size:11px;font-family:monospace;color:#A78BFA;word-break:break-all}
+.url-box{background:var(--bg3);border:1px solid var(--border);border-radius:var(--rs);padding:9px 11px;font-size:11px;font-family:monospace;color:var(--accent);word-break:break-all;margin:5px 0;cursor:pointer}
+.section-lbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--text2);margin:14px 0 6px}
+@media(min-width:500px){.kpi-grid{grid-template-columns:repeat(4,1fr)}.modal{border-radius:16px;margin-bottom:20px}.mbg{align-items:center}}
+</style>
+</head>
+<body>
+<div class="app">
+<div class="topbar">
+  <div class="logo">CodAfrik</div>
+  <span class="currency-badge" onclick="openCurrencyModal()" title="Changer la devise">💱 <span id="cur-lbl">USD</span></span>
+  <div class="sync-dot" id="sdot"></div>
+  <span style="font-size:10px;color:var(--text2);margin-left:2px" id="last-sync"></span>
+</div>
+<div class="role-bar" id="rbar">
+  <button class="rb r-admin active" onclick="setRole('admin')">👑 Admin</button>
+  <button class="rb r-closeur" onclick="setRole('closeur')">📞 Closeur</button>
+  <button class="rb r-livreur" onclick="setRole('livreur')">🚚 Livreur</button>
+</div>
+<div class="nav" id="nav"></div>
+<div class="content" id="content"><div class="loader"><div class="spin"></div>Chargement...</div></div>
+<div id="mct"></div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════════════════
+//  CONFIGURATION — À MODIFIER
+// ══════════════════════════════════════════════════════════════
+const SHEET_ID = "1-UoulnD4iOFmZ9M_Thbm8qzeDdBGCFRjinbyIY0Syyc";
+
+// Make.com Webhook URL — pour écrire dans le Sheet
+// Laisse vide si pas encore configuré
+// Webhook Make.com — intégré directement dans le code (invisible aux utilisateurs)
+const MAKE_WEBHOOK = "https://hook.us2.make.com/2nuna5ia2dus1i5iaj49b4ni7twq618u";
+
+// ══════════════════════════════════════════════════════════════
+//  DEVISE
+// ══════════════════════════════════════════════════════════════
+const CURRENCIES = {
+  USD: { symbol:'$',  name:'Dollar US',       rate:1 },
+  EUR: { symbol:'€',  name:'Euro',            rate:0.92 },
+  XOF: { symbol:'F',  name:'Franc CFA (UEMOA)',rate:600 },
+  XAF: { symbol:'F',  name:'Franc CFA (CEMAC)',rate:600 },
+  MAD: { symbol:'DH', name:'Dirham marocain', rate:9.9 },
+  GHS: { symbol:'₵',  name:'Cedi ghanéen',   rate:15.5 },
+  NGN: { symbol:'₦',  name:'Naira nigérian',  rate:1600 },
+  GNF: { symbol:'FG', name:'Franc guinéen',   rate:8600 },
+};
+
+let curCode = localStorage.getItem('CA_CUR') || 'USD';
+function cur() { return CURRENCIES[curCode] || CURRENCIES.USD; }
+function fmt(usd) {
+  const c = cur();
+  const val = usd * c.rate;
+  if (val >= 1000) return c.symbol + Math.round(val).toLocaleString('fr-FR');
+  return c.symbol + val.toFixed(val < 10 ? 2 : 0);
+}
+
+function openCurrencyModal() {
+  openModal(`
+    <h3>💱 Choisir la devise</h3>
+    <p class="msub">Tous les montants seront convertis automatiquement</p>
+    <div style="display:grid;gap:6px">
+      ${Object.entries(CURRENCIES).map(([code,c])=>`
+      <button class="mopt ${curCode===code?'sel':''}" onclick="setCurrency('${code}')">
+        <strong>${c.symbol} ${code}</strong> — ${c.name}
+        ${code!=='USD'?`<span style="font-size:10px;opacity:.6;float:right">1 USD = ${c.rate} ${code}</span>`:''}
+      </button>`).join('')}
+    </div>
+    <div class="mbtns"><button class="btn" style="flex:1" onclick="closeModal()">Fermer</button></div>`);
+}
+
+function setCurrency(code) {
+  curCode = code;
+  localStorage.setItem('CA_CUR', code);
+  document.getElementById('cur-lbl').textContent = code;
+  closeModal();
+  render();
+  toast(`Devise : ${CURRENCIES[code].symbol} ${code}`);
+}
+
+// ══════════════════════════════════════════════════════════════
+//  ÉTAT
+// ══════════════════════════════════════════════════════════════
+let role = 'admin', tab = 'dashboard';
+let orders = [], cfg = {produits:[],paysUniques:[],villesParPays:{},livreurs:[],closeurs:[]};
+
+const UP = new URLSearchParams(location.search);
+const URL_ROLE = UP.get('role'), URL_NOM = UP.get('nom')||'';
+
+// ══════════════════════════════════════════════════════════════
+//  LECTURE SHEET (CSV public)
+// ══════════════════════════════════════════════════════════════
+const CSV = n => `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(n)}`;
+
+function parseCSV(txt) {
+  const rows=[];
+  for (const line of txt.split('\n')) {
+    if (!line.trim()) continue;
+    const cells=[]; let cur='',inQ=false;
+    for (let i=0;i<line.length;i++) {
+      const c=line[i];
+      if(c==='"'){if(inQ&&line[i+1]==='"'){cur+='"';i++;}else inQ=!inQ;}
+      else if(c===','&&!inQ){cells.push(cur.trim());cur='';}
+      else cur+=c;
+    }
+    cells.push(cur.trim()); rows.push(cells);
+  }
+  return rows;
+}
+
+async function fetchCSV(name) {
+  const r = await fetch(CSV(name));
+  if (!r.ok) throw new Error(`HTTP ${r.status} — ${name}`);
+  return parseCSV(await r.text());
+}
+
+const C={ID:0,DATE:1,SHOPIFY:2,CLIENT:3,TEL:4,PAYS:5,VILLE:6,PRODUIT:7,QTE:8,PRIX:10,FRAIS:12,CLOSEUR:14,LIVREUR:16,STATUT:19,MOTIF:20,SOURCE:23};
+
+async function loadOrders() {
+  const rows = await fetchCSV('📋 COMMANDES');
+  return rows.slice(4).filter(r=>r[C.CLIENT]?.trim()).map(r=>({
+    id:r[C.ID]||'', date:r[C.DATE]||'', shopify:r[C.SHOPIFY]||'',
+    client:r[C.CLIENT]||'', tel:r[C.TEL]||'', pays:r[C.PAYS]||'',
+    ville:r[C.VILLE]||'', produit:r[C.PRODUIT]||'',
+    qte:parseInt(r[C.QTE])||1,
+    prix:parseFloat(String(r[C.PRIX]||'0').replace(',','.'))||0,
+    frais:parseFloat(String(r[C.FRAIS]||'0').replace(',','.'))||0,
+    closeur:r[C.CLOSEUR]||'', livreur:r[C.LIVREUR]||'',
+    statut:r[C.STATUT]||'En attente', motif:r[C.MOTIF]||'',
+    source:r[C.SOURCE]||'',
+  }));
+}
+
+async function loadConfig() {
+  const rows = await fetchCSV('⚙️ CONFIGURATION');
+  const produits=[],pv=[],livreurs=[],closeurs=[];
+  for (const r of rows) {
+    const id=(r[0]||'').trim();
+    if (!id) continue;
+    if (id.startsWith('PRD')&&r[1]) {
+      produits.push({id,nom:r[1].trim(),prixVente:parseFloat(String(r[4]||'0').replace(',','.'))||0});
+    }
+    if (id.startsWith('PV')&&r[1]&&r[2]) {
+      const actif=(r[4]||'O').trim();
+      if(actif==='O'||actif==='') pv.push({pays:r[1].trim(),ville:r[2].trim()});
+    }
+    if (id.startsWith('LIV')&&r[1]) {
+      const actif=(r[7]||'O').trim();
+      if(actif==='O'||actif==='') livreurs.push({
+        id,nom:(r[1]+' '+(r[2]||'')).trim(),
+        tel:r[3]||'',pays:r[4]||'',ville:r[5]||'',
+        frais:parseFloat(String(r[6]||'3.5').replace(',','.'))||3.5,
+      });
+    }
+    if (id.startsWith('CLO')&&r[1]) {
+      const actif=(r[6]||'O').trim();
+      if(actif==='O'||actif==='') closeurs.push({
+        id,nom:(r[1]+' '+(r[2]||'')).trim(),
+        tel:r[3]||'',commission:parseFloat(String(r[5]||'3').replace(',','.'))||3,
+      });
+    }
+  }
+  const paysUniques=[...new Set(pv.map(p=>p.pays))].filter(Boolean);
+  const villesParPays={};
+  pv.forEach(p=>{
+    if(!villesParPays[p.pays]) villesParPays[p.pays]=[];
+    if(!villesParPays[p.pays].includes(p.ville)) villesParPays[p.pays].push(p.ville);
+  });
+  return {produits,paysUniques,villesParPays,livreurs,closeurs};
+}
+
+// ══════════════════════════════════════════════════════════════
+//  ÉCRITURE — Make.com Webhook (solution professionnelle)
+// ══════════════════════════════════════════════════════════════
+async function writeToSheet(payload) {
+  const url = MAKE_WEBHOOK || localStorage.getItem('CA_WEBHOOK');
+  if (!url) {
+    console.log('Make webhook non configuré — sauvegarde locale uniquement');
+    return false;
+  }
+  try {
+    await fetch(url, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify(payload),
+    });
+    return true;
+  } catch(e) {
+    console.error('Make webhook error:', e.message);
+    return false;
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
+//  PERSISTANCE LOCALE (localStorage)
+// ══════════════════════════════════════════════════════════════
+function saveLocal() {
+  try { localStorage.setItem('CA_ORDERS', JSON.stringify(orders)); } catch(e) {}
+}
+function loadLocal() {
+  try { const s=localStorage.getItem('CA_ORDERS'); return s?JSON.parse(s):[]; } catch(e) { return []; }
+}
+
+// ══════════════════════════════════════════════════════════════
+//  STATUTS & HELPERS
+// ══════════════════════════════════════════════════════════════
+const ST_MAP = {
+  'En attente':'s0','Assignée closeur':'s1','En appel':'s2',
+  'Confirmée':'s3','Assignée livreur':'s4','En livraison':'s5',
+  'Livrée ✓':'s6','Refusée':'s7','Annulée':'s8',
+};
+const MOTIFS_ANN = ['Client injoignable (3 tentatives)',"Client a changé d'avis",'Doublon','Mauvais numéro','Prix refusé','Délai trop long','Autre'];
+const MOTIFS_REF = ['Client absent','Client nie avoir commandé','Adresse introuvable','Client refuse de payer','Produit endommagé','Mauvais produit livré','Autre'];
+
+const esc = s => String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+function badge(s) { return `<span class="st ${ST_MAP[s]||'s8'}">${esc(s)}</span>`; }
+function toast(msg,dur=3000) {
+  const el=document.createElement('div');
+  el.className='toast';el.textContent=msg;
+  document.body.appendChild(el);
+  setTimeout(()=>el.remove(),dur);
+}
+function openModal(html) {
+  document.getElementById('mct').innerHTML=`<div class="mbg" onclick="if(event.target===this)closeModal()"><div class="modal"><div class="mh"></div>${html}</div></div>`;
+}
+function closeModal(){document.getElementById('mct').innerHTML='';}
+function setSyncStatus(s) {
+  const d=document.getElementById('sdot');
+  const lbl=document.getElementById('last-sync');
+  if(!d)return;
+  d.className='sync-dot'+(s==='load'?' load':s==='err'?' err':'');
+  if(s==='ok'&&lbl){
+    const now=new Date();
+    lbl.textContent=`${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}`;
+  }
+}
+
+// Mise à jour locale + Make webhook
+function localUpdate(id, changes) {
+  const o=orders.find(x=>x.id===id);
+  if(o) Object.assign(o,changes);
+  saveLocal(); render();
+}
+async function updateStatut(id,statut,motif='') {
+  localUpdate(id,{statut,motif});
+  await writeToSheet({action:'UPDATE_STATUT',cmdId:id,statut,motif});
+}
+async function assignCloseur(id,nom) {
+  localUpdate(id,{closeur:nom,statut:'Assignée closeur'});
+  await writeToSheet({action:'ASSIGN_CLOSEUR',cmdId:id,closeurNom:nom});
+}
+async function assignLivreur(id,nom) {
+  localUpdate(id,{livreur:nom,statut:'Assignée livreur'});
+  await writeToSheet({action:'ASSIGN_LIVREUR',cmdId:id,livreurNom:nom});
+}
+
+// ══════════════════════════════════════════════════════════════
+//  NAVIGATION
+// ══════════════════════════════════════════════════════════════
+const TABS = {
+  admin:[
+    {id:'dashboard',l:'📊 Dashboard'},
+    {id:'commandes',l:'📋 Commandes'},
+    {id:'bilan',l:'📅 Bilan'},
+    {id:'closeurs_p',l:'📞 Closeurs'},
+    {id:'livreurs_p',l:'🚚 Livreurs'},
+    {id:'motifs',l:'📉 Motifs'},
+    {id:'nouveau',l:'➕ Nouveau'},
+    {id:'params',l:'⚙️ Paramètres'},
+  ],
+  closeur:[{id:'mes_cmd',l:'📋 Mes commandes'},{id:'histo_clo',l:'🕐 Historique'},{id:'bilan_clo',l:'📅 Mon bilan'}],
+  livreur:[{id:'mes_liv',l:'🚚 Mes livraisons'},{id:'histo_liv',l:'✓ Historique'},{id:'bilan_liv',l:'📅 Mon bilan'}],
+};
+
+function setRole(r) {
+  role=r;
+  document.querySelectorAll('.rb').forEach(b=>b.classList.remove('active'));
+  document.querySelector('.rb.r-'+r)?.classList.add('active');
+  tab=r==='admin'?'dashboard':r==='closeur'?'mes_cmd':'mes_liv';
+  render();
+}
+function switchTab(t){tab=t;render();}
+function renderNav() {
+  const p=orders.filter(o=>o.statut==='En attente').length;
+  document.getElementById('nav').innerHTML=TABS[role].map(t=>
+    `<button class="nb ${tab===t.id?'active':''}" onclick="switchTab('${t.id}')">${t.l}${t.id==='commandes'&&p?`<span class="pill">${p}</span>`:''}</button>`
+  ).join('');
+}
+
+// ══════════════════════════════════════════════════════════════
+//  RENDER ROUTER
+// ══════════════════════════════════════════════════════════════
+function render() {
+  renderNav();
+  const map={
+    dashboard:rDB,commandes:rCmd,closeurs_p:rClPerf,livreurs_p:rLivPerf,
+    motifs:rMotifs,nouveau:rNew,params:rParams,
+    mes_cmd:rCloseurView,histo_clo:rHistoClo,bilan_clo:rBilanClo,
+    mes_liv:rLivreurView,histo_liv:rHistoLiv,bilan_liv:rBilanLiv,
+    bilan:rBilanAdmin,
+  };
+  document.getElementById('content').innerHTML=(map[tab]||rDB)();
+}
+
+// ══════════════════════════════════════════════════════════════
+//  DASHBOARD
+// ══════════════════════════════════════════════════════════════
+function rDB() {
+  const filtered = filterOrders(orders);
+  const tot=filtered.length;
+  const liv=filtered.filter(o=>o.statut==='Livrée ✓').length;
+  const ref=filtered.filter(o=>o.statut==='Refusée').length;
+  const ann=filtered.filter(o=>o.statut==='Annulée').length;
+  const ca=filtered.filter(o=>o.statut==='Livrée ✓').reduce((s,o)=>s+o.prix*o.qte-o.frais,0);
+  const taux=tot>0?Math.round(liv/tot*100):0;
+  const enCours=filtered.filter(o=>!['Livrée ✓','Refusée','Annulée'].includes(o.statut)).length;
+  const C=cur();
+  const today = new Date().toISOString().split('T')[0];
+  const defFrom = new Date(new Date().setDate(1)).toISOString().split('T')[0];
+  return `
+<div class="card" style="margin-bottom:10px">
+  <div class="cb" style="padding:10px 14px">
+    <div class="g2" style="margin-bottom:8px">
+      <div class="fr" style="margin-bottom:0"><label>Du</label><input type="date" id="f_from" value="${filterFrom||defFrom}"></div>
+      <div class="fr" style="margin-bottom:0"><label>Au</label><input type="date" id="f_to" value="${filterTo||today}"></div>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-p" style="flex:1;padding:7px" onclick="applyFilter()">📊 Filtrer</button>
+      <button class="btn" onclick="resetFilter()">✕ Tout</button>
+    </div>
+  </div>
+</div>
+<div class="kpi-grid">
+  <div class="kpi" style="border-top-color:#6C63FF"><div class="kl">Commandes</div><div class="kv">${tot}</div><div class="ks">${enCours} en cours</div></div>
+  <div class="kpi" style="border-top-color:#10B981"><div class="kl">CA net (${C.symbol}${curCode})</div><div class="kv">${fmt(ca)}</div><div class="ks">${liv} livrées</div></div>
+  <div class="kpi" style="border-top-color:#10B981"><div class="kl">Taux livraison</div><div class="kv">${taux}%</div><div class="ks">>80% objectif</div></div>
+  <div class="kpi" style="border-top-color:#EF4444"><div class="kl">Refus+Annul.</div><div class="kv">${ref+ann}</div><div class="ks">${tot>0?Math.round((ref+ann)/tot*100):0}% du total</div></div>
+</div>
+${!MAKE_WEBHOOK&&!localStorage.getItem('CA_WEBHOOK')?`<div class="alert alert-warn">⚠️ Make.com webhook non configuré — va dans ⚙️ Paramètres pour activer l'écriture automatique dans le Sheet</div>`:''}
+<div class="card">
+  <div class="ch">🔴 Actions requises <span class="badge" style="background:var(--red2);color:#FCA5A5">${orders.filter(o=>['En attente','Confirmée'].includes(o.statut)).length}</span></div>
+  ${orders.filter(o=>['En attente','Confirmée'].includes(o.statut)).length===0
+    ?'<div class="empty">✓ Aucune action requise</div>'
+    :`<div class="tw"><table>
+      <tr><th>ID</th><th>Client</th><th>Ville</th><th>Montant</th><th>Statut</th><th></th></tr>
+      ${orders.filter(o=>['En attente','Confirmée'].includes(o.statut)).map(o=>`
+      <tr>
+        <td style="font-size:10px;color:var(--text2)">${esc(o.id)}</td>
+        <td><strong>${esc(o.client)}</strong></td>
+        <td>${esc(o.ville)}</td>
+        <td><strong>${fmt(o.prix*o.qte)}</strong></td>
+        <td>${badge(o.statut)}</td>
+        <td><button class="btn btn-sm btn-p" onclick="openAssign('${esc(o.id)}')">Assigner</button></td>
+      </tr>`).join('')}
+    </table></div>`}
+</div>
+<div class="card">
+  <div class="ch">📊 Par statut</div>
+  <div class="cb" style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+    ${Object.keys(ST_MAP).map(s=>{
+      const n=orders.filter(o=>o.statut===s).length;
+      if(!n) return '';
+      const pct=tot>0?Math.round(n/tot*100):0;
+      return `<div style="padding:9px;background:var(--bg3);border-radius:var(--rs)">
+        ${badge(s)}<div style="font-size:18px;font-weight:700;margin-top:3px">${n}</div>
+        <div style="font-size:10px;color:var(--text2)">${pct}%</div>
+      </div>`;
+    }).join('')}
+  </div>
+</div>`;
+}
+
+// ══════════════════════════════════════════════════════════════
+//  COMMANDES ADMIN
+// ══════════════════════════════════════════════════════════════
+function rCmd() {
+  return `<div class="card">
+    <div class="ch">📋 Toutes les commandes
+      <span class="badge" style="background:rgba(108,99,255,.2);color:#A78BFA;margin-left:4px">${orders.length}</span>
+      <button class="btn btn-sm btn-p" style="margin-left:auto" onclick="switchTab('nouveau')">+ Nouveau</button>
+    </div>
+    <div class="tw"><table>
+      <tr><th>ID</th><th>Client</th><th>Produit</th><th>Montant</th><th>Closeur</th><th>Livreur</th><th>Statut</th><th>Motif</th><th></th></tr>
+      ${orders.length===0?'<tr><td colspan="9"><div class="empty">Aucune commande — crée-en une ou attends la sync Shopify</div></td></tr>':''}
+      ${orders.map(o=>`<tr>
+        <td style="font-size:10px;color:var(--text2)">${esc(o.id)}<br><span style="opacity:.5">${esc(o.shopify)}</span></td>
+        <td><strong>${esc(o.client)}</strong><br><span style="font-size:10px;color:var(--text2)">${esc(o.ville)}, ${esc(o.pays.substring(0,3))}</span></td>
+        <td style="font-size:11px">${esc(o.produit)} ×${o.qte}</td>
+        <td><strong>${fmt(o.prix*o.qte)}</strong></td>
+        <td style="font-size:11px">${o.closeur||'<span style="color:var(--red)">—</span>'}</td>
+        <td style="font-size:11px">${o.livreur||'<span style="color:var(--text2)">—</span>'}</td>
+        <td>${badge(o.statut)}</td>
+        <td style="font-size:11px;color:#FCA5A5;max-width:110px;white-space:normal">${esc(o.motif)||'—'}</td>
+        <td style="white-space:nowrap">
+          <button class="btn btn-sm" onclick="openAssign('${esc(o.id)}')">✏️</button>
+          <button class="btn btn-sm" onclick="openTL('${esc(o.id)}')">🕐</button>
+          <button class="btn btn-sm btn-d" onclick="confirmDelete('${esc(o.id)}')">🗑️</button>
+        </td>
+      </tr>`).join('')}
+    </table></div>
+  </div>`;
+}
+
+// ══════════════════════════════════════════════════════════════
+//  PERFORMANCES
+// ══════════════════════════════════════════════════════════════
+function rClPerf() {
+  const noms=[...new Set(orders.map(o=>o.closeur).filter(Boolean))];
+  if(!noms.length) return '<div class="empty">Aucune donnée closeur</div>';
+  return `<div class="card"><div class="ch">📞 Performance closeurs</div>
+    <div class="tw"><table>
+      <tr><th>Closeur</th><th>Assignées</th><th>Confirmées</th><th>Annulées</th><th>Taux</th><th>CA livré</th></tr>
+      ${noms.map(cl=>{
+        const a=orders.filter(o=>o.closeur===cl).length;
+        const c=orders.filter(o=>o.closeur===cl&&['Confirmée','Assignée livreur','En livraison','Livrée ✓'].includes(o.statut)).length;
+        const ann=orders.filter(o=>o.closeur===cl&&o.statut==='Annulée').length;
+        const ca=orders.filter(o=>o.closeur===cl&&o.statut==='Livrée ✓').reduce((s,o)=>s+o.prix*o.qte,0);
+        const t=a>0?Math.round(c/a*100):0;
+        const col=t>=75?'var(--green)':t>=50?'var(--amber)':'var(--red)';
+        return `<tr><td><strong>${esc(cl)}</strong></td><td>${a}</td><td>${c}</td><td>${ann}</td>
+          <td style="color:${col};font-weight:700">${t}%
+            <div class="bar-bg"><div class="bar" style="width:${t}%;background:${col}"></div></div>
+          </td><td><strong>${fmt(ca)}</strong></td></tr>`;
+      }).join('')}
+    </table></div></div>`;
+}
+
+function rLivPerf() {
+  const noms=[...new Set(orders.map(o=>o.livreur).filter(Boolean))];
+  if(!noms.length) return '<div class="empty">Aucune donnée livreur</div>';
+  return `<div class="card"><div class="ch">🚚 Performance livreurs</div>
+    <div class="tw"><table>
+      <tr><th>Livreur</th><th>Assignées</th><th>Livrées</th><th>Refusées</th><th>Taux</th><th>CA collecté</th></tr>
+      ${noms.map(lv=>{
+        const a=orders.filter(o=>o.livreur===lv).length;
+        const l=orders.filter(o=>o.livreur===lv&&o.statut==='Livrée ✓').length;
+        const r=orders.filter(o=>o.livreur===lv&&o.statut==='Refusée').length;
+        const ca=orders.filter(o=>o.livreur===lv&&o.statut==='Livrée ✓').reduce((s,o)=>s+o.prix*o.qte,0);
+        const t=a>0?Math.round(l/a*100):0;
+        const col=t>=80?'var(--green)':t>=60?'var(--amber)':'var(--red)';
+        return `<tr><td><strong>${esc(lv)}</strong></td><td>${a}</td><td>${l}</td><td>${r}</td>
+          <td style="color:${col};font-weight:700">${t}%
+            <div class="bar-bg"><div class="bar" style="width:${t}%;background:${col}"></div></div>
+          </td><td><strong>${fmt(ca)}</strong></td></tr>`;
+      }).join('')}
+    </table></div></div>`;
+}
+
+// ══════════════════════════════════════════════════════════════
+//  MOTIFS
+// ══════════════════════════════════════════════════════════════
+function rMotifs() {
+  function chart(list,col) {
+    if(!list.length) return '<div class="empty">Aucun motif</div>';
+    const counts={};
+    list.forEach(o=>{if(o.motif)counts[o.motif]=(counts[o.motif]||0)+1;});
+    const max=Math.max(...Object.values(counts));
+    return Object.entries(counts).sort((a,b)=>b[1]-a[1]).map(([m,n])=>`
+      <div style="margin-bottom:9px">
+        <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px"><span>${esc(m)}</span><strong>${n}</strong></div>
+        <div class="bar-bg"><div class="bar" style="width:${Math.round(n/max*100)}%;background:${col}"></div></div>
+      </div>`).join('');
+  }
+  return `
+  <div class="card"><div class="ch">✕ Refus <span class="badge" style="background:var(--red2);color:#FCA5A5">${orders.filter(o=>o.statut==='Refusée').length}</span></div>
+    <div class="cb">${chart(orders.filter(o=>o.statut==='Refusée'),'var(--red)')}</div></div>
+  <div class="card"><div class="ch">✕ Annulations <span class="badge" style="background:rgba(100,100,120,.2);color:#9CA3AF">${orders.filter(o=>o.statut==='Annulée').length}</span></div>
+    <div class="cb">${chart(orders.filter(o=>o.statut==='Annulée'),'var(--text2)')}</div></div>
+  <div class="card"><div class="ch">📋 Détail</div>
+    <div class="tw"><table>
+      <tr><th>ID</th><th>Client</th><th>Closeur</th><th>Livreur</th><th>Statut</th><th>Motif</th></tr>
+      ${orders.filter(o=>o.motif).map(o=>`<tr>
+        <td style="font-size:10px;color:var(--text2)">${esc(o.id)}</td>
+        <td>${esc(o.client)}</td><td style="font-size:11px">${esc(o.closeur)||'—'}</td>
+        <td style="font-size:11px">${esc(o.livreur)||'—'}</td>
+        <td>${badge(o.statut)}</td>
+        <td style="font-size:12px;color:#FCA5A5">${esc(o.motif)}</td>
+      </tr>`).join('')||'<tr><td colspan="6"><div class="empty">Aucun motif enregistré</div></td></tr>'}
+    </table></div></div>`;
+}
+
+// ══════════════════════════════════════════════════════════════
+//  NOUVELLE COMMANDE
+// ══════════════════════════════════════════════════════════════
+function rNew() {
+  const pays0=cfg.paysUniques[0]||'';
+  const villes0=cfg.villesParPays[pays0]||[];
+  return `<div class="card" style="max-width:480px">
+    <div class="ch">➕ Nouvelle commande</div>
+    <div class="cb">
+      <div class="g2">
+        <div class="fr"><label>Nom client *</label><input id="n_cl" placeholder="Ex: Amadou Diop" autocomplete="off"></div>
+        <div class="fr"><label>Téléphone</label><input id="n_tel" type="tel" placeholder="77 123 4567"></div>
+      </div>
+      <div class="fr"><label>Produit *</label>
+        <select id="n_prod">
+          ${cfg.produits.length
+            ?cfg.produits.map(p=>`<option value="${p.id}|${p.prixVente}">${p.nom} — ${fmt(p.prixVente)}</option>`).join('')
+            :'<option value="PRD001|20">Chargement...</option>'}
+        </select>
+      </div>
+      <div class="g2">
+        <div class="fr"><label>Quantité</label><input id="n_qte" type="number" value="1" min="1"></div>
+        <div class="fr"><label>Source</label>
+          <select id="n_src">
+            <option>Facebook Ads</option><option>Instagram Ads</option>
+            <option>TikTok Ads</option><option>WhatsApp</option>
+            <option>Shopify</option><option>Organique</option><option>Bouche à oreille</option>
+          </select>
+        </div>
+      </div>
+      <div class="g2">
+        <div class="fr"><label>Pays</label>
+          <select id="n_pays" onchange="majVilles()">
+            ${cfg.paysUniques.map(p=>`<option>${p}</option>`).join('')||'<option>Sénégal</option>'}
+          </select>
+        </div>
+        <div class="fr"><label>Ville</label>
+          <select id="n_ville">
+            ${villes0.map(v=>`<option>${v}</option>`).join('')||'<option>Dakar</option>'}
+          </select>
+        </div>
+      </div>
+      <div class="fr"><label>Assigner closeur</label>
+        <select id="n_clo">
+          <option value="">— Non assigné —</option>
+          ${cfg.closeurs.map(c=>`<option value="${c.nom}">${c.nom}</option>`).join('')}
+        </select>
+      </div>
+      <button class="btn btn-p btn-bl" onclick="creerCommande()">✓ Créer la commande</button>
+      <div id="n_msg" style="margin-top:10px;font-size:12px;text-align:center;color:var(--green)"></div>
+    </div>
+  </div>`;
+}
+
+function majVilles() {
+  const pays=document.getElementById('n_pays')?.value;
+  const sel=document.getElementById('n_ville');
+  if(!sel||!pays) return;
+  const vs=cfg.villesParPays[pays]||[];
+  sel.innerHTML=vs.length?vs.map(v=>`<option>${v}</option>`).join(''):`<option>${pays}</option>`;
+}
+
+async function creerCommande() {
+  const client=document.getElementById('n_cl')?.value.trim();
+  if(!client){toast('⚠️ Nom client requis');return;}
+  const prodRaw=(document.getElementById('n_prod')?.value||'').split('|');
+  const prodId=prodRaw[0]||'PRD001';
+  const prix=parseFloat(prodRaw[1])||20;
+  const closeur=document.getElementById('n_clo')?.value||'';
+  const pays=document.getElementById('n_pays')?.value||'';
+  const ville=document.getElementById('n_ville')?.value||'';
+  const qte=parseInt(document.getElementById('n_qte')?.value)||1;
+  const src=document.getElementById('n_src')?.value||'';
+  const tel=document.getElementById('n_tel')?.value||'';
+  const now=new Date().toISOString().split('T')[0];
+  const newId='CMD-'+String(orders.length+1).padStart(4,'0');
+
+  const newOrder={
+    id:newId,date:now,shopify:'',client,tel,pays,ville,
+    produit:prodId,qte,prix,frais:3.5,
+    closeur,livreur:'',
+    statut:closeur?'Assignée closeur':'En attente',
+    motif:'',source:src,_local:true,
+  };
+  orders.unshift(newOrder);
+  saveLocal();
+
+  // Envoi Make.com
+  const row=[newId,now,'',client,tel,pays,ville,prodId,qte,'',prix,'',3.5,'',closeur,'','','','',closeur?'Assignée closeur':'En attente','','','',src];
+  const ok=await writeToSheet({action:'ADD_COMMANDE',cmdId:newId,data:row,closeurNom:closeur,statut:closeur?'Assignée closeur':'En attente'});
+
+  const msg=document.getElementById('n_msg');
+  if(msg) msg.textContent=ok?`✓ ${newId} créée et envoyée au Sheet !`:`✓ ${newId} créée localement (configure Make.com pour la sync automatique)`;
+  toast(`✓ Commande ${newId} créée !`);
+  setTimeout(()=>switchTab('commandes'),1500);
+}
+
+// ══════════════════════════════════════════════════════════════
+//  PARAMÈTRES
+// ══════════════════════════════════════════════════════════════
+function rParams() {
+  return `<div class="card">
+    <div class="ch">⚙️ Statut du système</div>
+    <div class="cb">
+      <div class="alert alert-ok">✅ Google Sheets connecté — ${orders.length} commandes | ${cfg.produits.length} produits | ${cfg.closeurs.length} closeurs | ${cfg.livreurs.length} livreurs</div>
+      <div class="alert alert-ok">✅ Make.com webhook actif — synchronisation automatique</div>
+      <div class="alert alert-ok">✅ Shopify → Make.com → Sheet configuré</div>
+      <p style="font-size:12px;color:var(--text2);margin-top:10px;line-height:1.7">
+        Toutes les configurations sont intégrées dans l'application.<br>
+        Les données se synchronisent automatiquement toutes les 60 secondes.
+      </p>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="ch">📱 Shopify → Make.com → Sheet (automatisation)</div>
+    <div class="cb">
+      <p style="font-size:12px;color:var(--text2);line-height:1.8;margin-bottom:10px">
+        Chaque commande Shopify s'ajoute automatiquement dans ton Sheet :<br>
+        <strong style="color:var(--text)">1.</strong> Make.com → Nouveau scénario<br>
+        <strong style="color:var(--text)">2.</strong> Module 1 : <strong style="color:var(--text)">Shopify → Watch Orders</strong><br>
+        <strong style="color:var(--text)">3.</strong> Module 2 : <strong style="color:var(--text)">Google Sheets → Add Row</strong> → feuille COMMANDES<br>
+        <strong style="color:var(--text)">4.</strong> Mapping : Nom ← customer.name | Tel ← shipping.phone | Produit ← line_items[0].name | Prix ← total_price | Ville ← shipping.city | Pays ← shipping.country | Statut ← "En attente"<br>
+        <strong style="color:var(--text)">5.</strong> Activer le scénario → chaque commande Shopify arrive dans l'app en 30 secondes
+      </p>
+      <div class="alert alert-ok">✅ Gratuit : Make.com offre 1000 opérations/mois — suffisant pour ~30 commandes/jour</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="ch">🔗 Liens personnalisés</div>
+    <div class="cb">
+      <div class="section-lbl">📞 Closeurs</div>
+      ${cfg.closeurs.map(c=>`
+      <div style="margin-bottom:8px">
+        <div style="font-size:11px;color:var(--text2);margin-bottom:3px">${esc(c.nom)}</div>
+        <div class="url-box" onclick="copyURL(this)">${location.origin+location.pathname}?role=closeur&nom=${encodeURIComponent(c.nom)}</div>
+      </div>`).join('')}
+      <div class="section-lbl">🚚 Livreurs</div>
+      ${cfg.livreurs.map(l=>`
+      <div style="margin-bottom:8px">
+        <div style="font-size:11px;color:var(--text2);margin-bottom:3px">${esc(l.nom)} — ${esc(l.ville)}</div>
+        <div class="url-box" onclick="copyURL(this)">${location.origin+location.pathname}?role=livreur&nom=${encodeURIComponent(l.nom)}</div>
+      </div>`).join('')}
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="ch">💱 Devise actuelle</div>
+    <div class="cb">
+      <p style="font-size:12px;color:var(--text2);margin-bottom:10px">Devise sélectionnée : <strong style="color:var(--text)">${curCode} — ${cur().name}</strong></p>
+      <button class="btn btn-p" onclick="openCurrencyModal()">💱 Changer la devise</button>
+    </div>
+  </div>`;
+}
+
+function saveWebhook() {
+  const url=document.getElementById('p_wh')?.value.trim();
+  if(url) localStorage.setItem('CA_WEBHOOK',url);
+  const msg=document.getElementById('p_msg');
+  if(msg) msg.textContent='✓ Webhook enregistré !';
+  toast('✓ Make.com webhook configuré');
+}
+
+function copyURL(el) {
+  navigator.clipboard.writeText(el.textContent.trim()).then(()=>toast('✓ Lien copié !'));
+}
+
+// ══════════════════════════════════════════════════════════════
+//  VUE CLOSEUR
+// ══════════════════════════════════════════════════════════════
+function rCloseurView() {
+  const moi=URL_NOM||cfg.closeurs[0]?.nom||'';
+  const actifs=orders.filter(o=>o.closeur===moi&&!['Livrée ✓','Refusée','Annulée'].includes(o.statut));
+  return `
+  <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:13px;margin-bottom:12px;display:flex;gap:10px;align-items:center">
+    <div style="width:40px;height:40px;background:rgba(180,83,9,.2);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">📞</div>
+    <div><div style="font-weight:700">${esc(moi)||'Closeur'}</div>
+    <div style="font-size:11px;color:var(--text2)">${actifs.length} commande(s) active(s)</div></div>
+  </div>
+  ${actifs.length===0?'<div class="empty">✓ Toutes tes commandes sont traitées</div>':''}
+  ${actifs.map(o=>`
+  <div class="cc">
+    <div class="ct"><div><div class="ci">${esc(o.id)}</div><div style="font-size:10px;color:var(--text2)">${esc(o.source)}</div></div>${badge(o.statut)}</div>
+    <div class="cd">👤 <strong>${esc(o.client)}</strong></div>
+    <a href="tel:${esc(o.tel)}" class="ctel">📞 ${esc(o.tel)}</a>
+    <div class="cd">📦 <strong>${esc(o.produit)}</strong> ×${o.qte}</div>
+    <div class="cd">📍 ${esc(o.ville)}, ${esc(o.pays)}</div>
+    <div class="cod">
+      <div><div class="cod-lbl">Valeur commande</div><div class="cod-amt">${fmt(o.prix*o.qte)}</div></div>
+    </div>
+    <div class="arow">
+      ${o.statut!=='Confirmée'?`<button class="btn btn-s" onclick="cloConfirm('${esc(o.id)}')">✓ Confirmer</button>`:''}
+      ${o.statut==='Confirmée'?`<button class="btn btn-w" onclick="openAssignLiv('${esc(o.id)}')">🚚 Assigner livreur</button>`:''}
+      <button class="btn" style="background:var(--amber2);color:#FCD34D;border-color:rgba(245,158,11,.3)" onclick="cloAppel('${esc(o.id)}')">📞 En appel</button>
+      <button class="btn btn-d" onclick="openMotif('ann','${esc(o.id)}')">✕ Annuler</button>
+    </div>
+  </div>`).join('')}`;
+}
+
+async function cloConfirm(id){await updateStatut(id,'Confirmée');toast('✓ Confirmée');}
+async function cloAppel(id){await updateStatut(id,'En appel');}
+
+// ══════════════════════════════════════════════════════════════
+//  VUE LIVREUR
+// ══════════════════════════════════════════════════════════════
+function rLivreurView() {
+  const moi=URL_NOM||cfg.livreurs[0]?.nom||'';
+  const actifs=orders.filter(o=>o.livreur===moi&&!['Livrée ✓','Refusée','Annulée'].includes(o.statut));
+  return `
+  <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:13px;margin-bottom:12px;display:flex;gap:10px;align-items:center">
+    <div style="width:40px;height:40px;background:rgba(6,95,70,.3);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">🚚</div>
+    <div><div style="font-weight:700">${esc(moi)||'Livreur'}</div>
+    <div style="font-size:11px;color:var(--text2)">${actifs.length} livraison(s) à effectuer</div></div>
+  </div>
+  ${actifs.length===0?'<div class="empty">✓ Aucune livraison en attente</div>':''}
+  ${actifs.map(o=>`
+  <div class="cc">
+    <div class="ct"><strong>${esc(o.id)}</strong>${badge(o.statut)}</div>
+    <div class="cd">👤 <strong>${esc(o.client)}</strong></div>
+    <a href="tel:${esc(o.tel)}" class="ctel">📞 ${esc(o.tel)}</a>
+    <div class="cd">📦 ${esc(o.produit)} ×${o.qte}</div>
+    <div class="cod">
+      <div><div class="cod-lbl">Montant COD à collecter</div><div class="cod-amt">${fmt(o.prix*o.qte)}</div></div>
+    </div>
+    <div class="arow">
+      ${o.statut!=='En livraison'?`<button class="btn btn-w" onclick="livRoute('${esc(o.id)}')">🚗 En route</button>`:''}
+      <button class="btn btn-s" style="flex:1" onclick="livLivrer('${esc(o.id)}')">✓ Livrée & COD collecté</button>
+      <button class="btn btn-d" onclick="openMotif('ref','${esc(o.id)}')">✕ Refusée</button>
+    </div>
+  </div>`).join('')}`;
+}
+
+async function livRoute(id){await updateStatut(id,'En livraison');toast('🚗 En route');}
+async function livLivrer(id){await updateStatut(id,'Livrée ✓');toast('✅ Livraison confirmée !');}
+
+// ══════════════════════════════════════════════════════════════
+//  HISTORIQUES
+// ══════════════════════════════════════════════════════════════
+function rHistoClo() {
+  const moi=URL_NOM||cfg.closeurs[0]?.nom||'';
+  const hist=orders.filter(o=>o.closeur===moi&&['Livrée ✓','Annulée','Refusée'].includes(o.statut));
+  const l=hist.filter(o=>o.statut==='Livrée ✓').length;
+  return `
+  <div class="kpi-grid" style="grid-template-columns:1fr 1fr 1fr">
+    <div class="kpi" style="border-top-color:var(--green)"><div class="kl">Livrées</div><div class="kv">${l}</div></div>
+    <div class="kpi" style="border-top-color:var(--text2)"><div class="kl">Annulées</div><div class="kv">${hist.filter(o=>o.statut==='Annulée').length}</div></div>
+    <div class="kpi" style="border-top-color:var(--accent)"><div class="kl">Taux confirm.</div><div class="kv">${hist.length>0?Math.round(l/hist.length*100):0}%</div></div>
+  </div>
+  <div class="card"><div class="ch">🕐 Mon historique</div>
+  <div class="tw"><table>
+    <tr><th>ID</th><th>Client</th><th>Montant</th><th>Statut</th><th>Motif</th></tr>
+    ${hist.map(o=>`<tr>
+      <td style="font-size:10px;color:var(--text2)">${esc(o.id)}</td>
+      <td>${esc(o.client)}</td>
+      <td>${fmt(o.prix*o.qte)}</td>
+      <td>${badge(o.statut)}</td>
+      <td style="font-size:11px;color:#FCA5A5">${esc(o.motif)||'—'}</td>
+    </tr>`).join('')||'<tr><td colspan="5"><div class="empty">Aucun historique</div></td></tr>'}
+  </table></div></div>`;
+}
+
+function rHistoLiv() {
+  const moi=URL_NOM||cfg.livreurs[0]?.nom||'';
+  const hist=orders.filter(o=>o.livreur===moi&&['Livrée ✓','Refusée'].includes(o.statut));
+  const l=hist.filter(o=>o.statut==='Livrée ✓').length;
+  const ca=hist.filter(o=>o.statut==='Livrée ✓').reduce((s,o)=>s+o.prix*o.qte,0);
+  return `
+  <div class="kpi-grid" style="grid-template-columns:1fr 1fr 1fr">
+    <div class="kpi" style="border-top-color:var(--green)"><div class="kl">Livrées</div><div class="kv">${l}</div></div>
+    <div class="kpi" style="border-top-color:var(--red)"><div class="kl">Refusées</div><div class="kv">${hist.length-l}</div></div>
+    <div class="kpi" style="border-top-color:var(--accent)"><div class="kl">CA collecté</div><div class="kv">${fmt(ca)}</div></div>
+  </div>
+  <div class="card"><div class="ch">✓ Mes livraisons terminées</div>
+  <div class="tw"><table>
+    <tr><th>ID</th><th>Client</th><th>Montant</th><th>Résultat</th><th>Motif</th></tr>
+    ${hist.map(o=>`<tr>
+      <td style="font-size:10px;color:var(--text2)">${esc(o.id)}</td>
+      <td>${esc(o.client)}</td>
+      <td><strong>${fmt(o.prix*o.qte)}</strong></td>
+      <td>${badge(o.statut)}</td>
+      <td style="font-size:11px;color:#FCA5A5">${esc(o.motif)||'—'}</td>
+    </tr>`).join('')||'<tr><td colspan="5"><div class="empty">Aucun historique</div></td></tr>'}
+  </table></div></div>`;
+}
+
+// ══════════════════════════════════════════════════════════════
+//  MODALS ADMIN
+// ══════════════════════════════════════════════════════════════
+function openAssign(id) {
+  const o=orders.find(x=>x.id===id);
+  const livs=cfg.livreurs.filter(l=>!o.ville||l.ville===o.ville);
+  openModal(`
+    <h3>✏️ Modifier — ${esc(id)}</h3>
+    <p class="msub">${esc(o.client)} · ${esc(o.ville)} · ${badge(o.statut)}</p>
+    <div class="fr"><label>Closeur</label>
+      <select id="m_clo"><option value="">— Non assigné —</option>
+        ${cfg.closeurs.map(c=>`<option ${o.closeur===c.nom?'selected':''}>${c.nom}</option>`).join('')}
+      </select></div>
+    <div class="fr"><label>Livreur</label>
+      <select id="m_liv"><option value="">— Non assigné —</option>
+        ${(livs.length?livs:cfg.livreurs).map(l=>`<option ${o.livreur===l.nom?'selected':''}>${l.nom}</option>`).join('')}
+      </select></div>
+    <div class="fr"><label>Statut</label>
+      <select id="m_stat">${Object.keys(ST_MAP).map(s=>`<option ${o.statut===s?'selected':''}>${s}</option>`).join('')}</select></div>
+    <div class="mbtns">
+      <button class="btn" style="flex:1" onclick="closeModal()">Annuler</button>
+      <button class="btn btn-p" style="flex:1" onclick="saveAssign('${esc(id)}')">Enregistrer</button>
+    </div>`);
+}
+
+async function saveAssign(id) {
+  const clo=document.getElementById('m_clo')?.value;
+  const liv=document.getElementById('m_liv')?.value;
+  const sta=document.getElementById('m_stat')?.value;
+  const o=orders.find(x=>x.id===id);
+  if(clo&&clo!==o.closeur) await assignCloseur(id,clo);
+  if(liv&&liv!==o.livreur) await assignLivreur(id,liv);
+  if(sta&&sta!==o.statut)  await updateStatut(id,sta,'');
+  closeModal(); toast('✓ Mis à jour');
+}
+
+function openAssignLiv(id) {
+  const o=orders.find(x=>x.id===id);
+  const livs=cfg.livreurs.filter(l=>!o.ville||l.ville===o.ville);
+  openModal(`
+    <h3>🚚 Assigner livreur</h3>
+    <p class="msub">${esc(o.client)} · ${esc(o.ville)}</p>
+    <div class="fr"><label>Livreur</label>
+      <select id="m_liv2">
+        ${(livs.length?livs:cfg.livreurs).map(l=>`<option>${l.nom}</option>`).join('')}
+      </select></div>
+    <div class="mbtns">
+      <button class="btn" style="flex:1" onclick="closeModal()">Annuler</button>
+      <button class="btn btn-p" style="flex:1" onclick="doAssignLiv('${esc(id)}')">Assigner</button>
+    </div>`);
+}
+
+async function doAssignLiv(id) {
+  const lv=document.getElementById('m_liv2')?.value;
+  await assignLivreur(id,lv);
+  closeModal(); toast(`🚚 Assigné à ${lv}`);
+}
+
+function openTL(id) {
+  const o=orders.find(x=>x.id===id);
+  const steps=[
+    {c:'#6C63FF',t:'Commande créée',d:o.date},
+    o.closeur&&{c:'#F59E0B',t:'Closeur assigné',d:o.closeur},
+    ['Confirmée','Assignée livreur','En livraison','Livrée ✓'].includes(o.statut)&&{c:'#10B981',t:'Confirmée par closeur'},
+    o.livreur&&{c:'#F97316',t:'Livreur assigné',d:o.livreur},
+    ['En livraison','Livrée ✓'].includes(o.statut)&&{c:'#F59E0B',t:'En cours de livraison'},
+    o.statut==='Livrée ✓'&&{c:'#10B981',t:'✓ Livrée — COD collecté'},
+    o.motif&&{c:'#EF4444',t:o.statut,d:o.motif},
+  ].filter(Boolean);
+  openModal(`
+    <h3>🕐 Suivi — ${esc(id)}</h3>
+    <p class="msub">${esc(o.client)} · ${esc(o.produit)} ×${o.qte} · <strong>${fmt(o.prix*o.qte)}</strong></p>
+    <div>
+      ${steps.map(s=>`<div style="display:flex;gap:10px;margin-bottom:12px">
+        <div style="width:10px;height:10px;border-radius:50%;background:${s.c};flex-shrink:0;margin-top:3px"></div>
+        <div style="font-size:12px;color:var(--text2)"><strong style="color:var(--text)">${esc(s.t)}</strong>${s.d?`<br>${esc(s.d)}`:''}</div>
+      </div>`).join('')}
+    </div>
+    <div style="text-align:center;margin:8px 0">${badge(o.statut)}</div>
+    ${o.motif?`<div style="background:var(--red2);border-radius:var(--rs);padding:8px 10px;font-size:12px;color:#FCA5A5;margin-top:6px"><strong style="display:block;font-size:10px;text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px;opacity:.7">Motif</strong>${esc(o.motif)}</div>`:''}
+    <div class="mbtns"><button class="btn" style="flex:1" onclick="closeModal()">Fermer</button></div>`);
+}
+
+// ══════════════════════════════════════════════════════════════
+//  MODAL MOTIF
+// ══════════════════════════════════════════════════════════════
+function openMotif(type,id) {
+  const o=orders.find(x=>x.id===id);
+  const motifs=type==='ann'?MOTIFS_ANN:MOTIFS_REF;
+  openModal(`
+    <h3>${type==='ann'?'✕ Annuler':'✕ Marquer refusée'}</h3>
+    <p class="msub">${esc(o.id)} — ${esc(o.client)}</p>
+    <div class="mopts">
+      ${motifs.map(m=>`<button class="mopt" onclick="selMotif(this,'${esc(m)}')">${esc(m)}</button>`).join('')}
+    </div>
+    <div class="fr" id="autre-row" style="display:none">
+      <label>Préciser</label>
+      <textarea id="m-autre" placeholder="Décrivez..."></textarea>
+    </div>
+    <div class="fr">
+      <label>Commentaire (optionnel)</label>
+      <textarea id="m-comment" placeholder="Infos supplémentaires..." style="min-height:54px"></textarea>
+    </div>
+    <div class="mbtns">
+      <button class="btn" style="flex:1" onclick="closeModal()">Retour</button>
+      <button class="btn btn-d" style="flex:1" onclick="submitMotif('${type}','${esc(id)}')">Enregistrer</button>
+    </div>`);
+}
+
+function selMotif(btn,val) {
+  document.querySelectorAll('.mopt').forEach(b=>b.classList.remove('sel'));
+  btn.classList.add('sel'); btn.dataset.val=val;
+  const ar=document.getElementById('autre-row');
+  if(ar) ar.style.display=val==='Autre'?'block':'none';
+}
+
+async function submitMotif(type,id) {
+  const sel=document.querySelector('.mopt.sel');
+  if(!sel){toast('⚠️ Choisis un motif');return;}
+  const base=sel.dataset.val;
+  const autre=document.getElementById('m-autre')?.value||'';
+  const comment=document.getElementById('m-comment')?.value||'';
+  const motif=(base==='Autre'?autre||'Autre':base)+(comment?` — ${comment}`:'');
+  const statut=type==='ann'?'Annulée':'Refusée';
+  await updateStatut(id,statut,motif);
+  closeModal(); toast(`${statut} — motif enregistré`);
+}
+
+// ══════════════════════════════════════════════════════════════
+//  ARCHIVAGE MENSUEL
+// ══════════════════════════════════════════════════════════════
+function getCurrentMonth() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+}
+
+function archiveAndReset() {
+  const month = getCurrentMonth();
+  const lastMonth = localStorage.getItem('CA_LAST_MONTH');
+  if (lastMonth && lastMonth !== month) {
+    // Archive le mois précédent
+    const archived = JSON.parse(localStorage.getItem('CA_ARCHIVE')||'{}');
+    archived[lastMonth] = orders.filter(o => !o._local);
+    localStorage.setItem('CA_ARCHIVE', JSON.stringify(archived));
+    // Remet à zéro les données locales
+    localStorage.removeItem('CA_ORDERS');
+    toast(`📅 Nouveau mois — données de ${lastMonth} archivées`);
+  }
+  localStorage.setItem('CA_LAST_MONTH', month);
+}
+
+function getArchivedMonths() {
+  try { return JSON.parse(localStorage.getItem('CA_ARCHIVE')||'{}'); }
+  catch(e) { return {}; }
+}
+
+// ── FILTRE PAR DATE ───────────────────────────────────────────
+let filterFrom = '', filterTo = '';
+
+function filterOrders(list) {
+  if (!filterFrom && !filterTo) return list;
+  return list.filter(o => {
+    if (!o.date) return true;
+    if (filterFrom && o.date < filterFrom) return false;
+    if (filterTo   && o.date > filterTo)   return false;
+    return true;
+  });
+}
+
+function applyFilter() {
+  filterFrom = document.getElementById('f_from')?.value || '';
+  filterTo   = document.getElementById('f_to')?.value   || '';
+  render();
+  toast(`Filtre appliqué : ${filterFrom||'début'} → ${filterTo||"aujourd'hui"}`);
+}
+
+function resetFilter() {
+  filterFrom = ''; filterTo = '';
+  const ff = document.getElementById('f_from');
+  const ft = document.getElementById('f_to');
+  if(ff) ff.value = ''; if(ft) ft.value = '';
+  render(); toast('Filtre effacé');
+}
+
+// ── SUPPRESSION COMMANDE ──────────────────────────────────────
+function confirmDelete(id) {
+  const o = orders.find(x=>x.id===id);
+  openModal(`
+    <h3>🗑️ Supprimer la commande ?</h3>
+    <p class="msub">${esc(o.id)} — ${esc(o.client)}</p>
+    <div style="background:var(--red2);border:1px solid rgba(239,68,68,.3);border-radius:var(--rs);padding:10px 12px;font-size:12px;color:#FCA5A5;margin-bottom:14px">
+      ⚠️ Cette action est irréversible. La commande sera supprimée de l'app et du Google Sheet.
+    </div>
+    <div class="mbtns">
+      <button class="btn" style="flex:1" onclick="closeModal()">Annuler</button>
+      <button class="btn btn-d" style="flex:1" onclick="deleteOrder('${esc(id)}')">Oui, supprimer</button>
+    </div>`);
+}
+
+async function deleteOrder(id) {
+  orders = orders.filter(x=>x.id!==id);
+  saveLocal();
+  await writeToSheet({action:'DELETE_COMMANDE', cmdId:id});
+  closeModal(); render();
+  toast('🗑️ Commande supprimée');
+}
+
+// ── BILAN ADMIN ───────────────────────────────────────────────
+function rBilanAdmin() {
+  const today = new Date().toISOString().split('T')[0];
+  const defFrom = filterFrom || new Date(new Date().setDate(1)).toISOString().split('T')[0];
+  const defTo   = filterTo   || today;
+  const filtered = filterOrders(orders);
+  const tot = filtered.length;
+  const liv = filtered.filter(o=>o.statut==='Livrée ✓').length;
+  const ref = filtered.filter(o=>o.statut==='Refusée').length;
+  const ann = filtered.filter(o=>o.statut==='Annulée').length;
+  const ca  = filtered.filter(o=>o.statut==='Livrée ✓').reduce((s,o)=>s+o.prix*o.qte-o.frais,0);
+  const taux = tot>0?Math.round(liv/tot*100):0;
+  const archive = getArchivedMonths();
+  const months  = Object.keys(archive).sort().reverse();
+
+  return `
+<div class="card">
+  <div class="ch">📅 Bilan par période</div>
+  <div class="cb">
+    <div class="g2" style="margin-bottom:10px">
+      <div class="fr"><label>Du</label><input type="date" id="f_from" value="${filterFrom||defFrom}"></div>
+      <div class="fr"><label>Au</label><input type="date" id="f_to" value="${filterTo||defTo}"></div>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-p" style="flex:1" onclick="applyFilter()">📊 Appliquer</button>
+      <button class="btn" onclick="resetFilter()">✕ Effacer</button>
+    </div>
+  </div>
+</div>
+
+<div class="kpi-grid">
+  <div class="kpi" style="border-top-color:#6C63FF"><div class="kl">Commandes</div><div class="kv">${tot}</div></div>
+  <div class="kpi" style="border-top-color:#10B981"><div class="kl">CA net</div><div class="kv">${fmt(ca)}</div></div>
+  <div class="kpi" style="border-top-color:#10B981"><div class="kl">Taux livraison</div><div class="kv">${taux}%</div></div>
+  <div class="kpi" style="border-top-color:#EF4444"><div class="kl">Refus+Annul.</div><div class="kv">${ref+ann}</div></div>
+</div>
+
+<div class="card">
+  <div class="ch">📊 Détail de la période</div>
+  <div class="tw"><table>
+    <tr><th>ID</th><th>Date</th><th>Client</th><th>Produit</th><th>Montant</th><th>Statut</th></tr>
+    ${filtered.length===0?'<tr><td colspan="6"><div class="empty">Aucune commande sur cette période</div></td></tr>':''}
+    ${filtered.map(o=>`<tr>
+      <td style="font-size:10px;color:var(--text2)">${esc(o.id)}</td>
+      <td style="font-size:11px">${esc(o.date)}</td>
+      <td>${esc(o.client)}</td>
+      <td style="font-size:11px">${esc(o.produit)}</td>
+      <td><strong>${fmt(o.prix*o.qte)}</strong></td>
+      <td>${badge(o.statut)}</td>
+    </tr>`).join('')}
+  </table></div>
+</div>
+
+${months.length>0?`<div class="card">
+  <div class="ch">🗂️ Archives mensuelles</div>
+  <div class="cb">
+    ${months.map(m=>{
+      const mOrders = archive[m];
+      const mLiv = mOrders.filter(o=>o.statut==='Livrée ✓').length;
+      const mCa  = mOrders.filter(o=>o.statut==='Livrée ✓').reduce((s,o)=>s+o.prix*o.qte-o.frais,0);
+      return `<div style="display:flex;justify-content:space-between;align-items:center;padding:10px;background:var(--bg3);border-radius:var(--rs);margin-bottom:6px">
+        <div><div style="font-weight:700">${m}</div><div style="font-size:11px;color:var(--text2)">${mOrders.length} commandes · ${mLiv} livrées</div></div>
+        <div style="text-align:right"><div style="font-weight:700;color:var(--green)">${fmt(mCa)}</div>
+          <button class="btn btn-sm" onclick="loadArchive('${m}')">Voir</button>
+        </div>
+      </div>`;
+    }).join('')}
+  </div>
+</div>`:''}`;
+}
+
+function loadArchive(month) {
+  const archive = getArchivedMonths();
+  orders = archive[month] || [];
+  filterFrom = month + '-01';
+  filterTo   = month + '-31';
+  switchTab('bilan');
+  toast(`📅 Archive ${month} chargée`);
+}
+
+// ── BILAN CLOSEUR ─────────────────────────────────────────────
+function rBilanClo() {
+  const moi = URL_NOM || cfg.closeurs[0]?.nom || '';
+  const today = new Date().toISOString().split('T')[0];
+  const defFrom = filterFrom || new Date(new Date().setDate(1)).toISOString().split('T')[0];
+  const myOrders = filterOrders(orders.filter(o=>o.closeur===moi));
+  const liv = myOrders.filter(o=>o.statut==='Livrée ✓').length;
+  const ann = myOrders.filter(o=>o.statut==='Annulée').length;
+  const ca  = myOrders.filter(o=>o.statut==='Livrée ✓').reduce((s,o)=>s+o.prix*o.qte,0);
+  // Commissions supprimées
+  const taux = myOrders.length>0?Math.round(liv/myOrders.length*100):0;
+
+  return `
+<div class="card">
+  <div class="ch">📅 Mon bilan — ${esc(moi)}</div>
+  <div class="cb">
+    <div class="g2" style="margin-bottom:10px">
+      <div class="fr"><label>Du</label><input type="date" id="f_from" value="${filterFrom||defFrom}"></div>
+      <div class="fr"><label>Au</label><input type="date" id="f_to" value="${filterTo||today}"></div>
+    </div>
+    <button class="btn btn-p btn-bl" onclick="applyFilter()">📊 Appliquer le filtre</button>
+  </div>
+</div>
+<div class="kpi-grid">
+  <div class="kpi" style="border-top-color:#6C63FF"><div class="kl">Total traitées</div><div class="kv">${myOrders.length}</div></div>
+  <div class="kpi" style="border-top-color:#10B981"><div class="kl">Confirmées</div><div class="kv">${liv}</div></div>
+  <div class="kpi" style="border-top-color:#EF4444"><div class="kl">Annulées</div><div class="kv">${ann}</div></div>
+  <div class="kpi" style="border-top-color:#10B981"><div class="kl">Taux confirm.</div><div class="kv">${taux}%</div></div>
+</div>
+<div class="card">
+  <div class="ch">📊 Taux de confirmation : <strong style="color:${taux>=75?'var(--green)':'var(--red)'}">${taux}%</strong></div>
+  <div class="tw"><table>
+    <tr><th>ID</th><th>Date</th><th>Client</th><th>Montant</th><th>Statut</th><th>Motif</th></tr>
+    ${myOrders.map(o=>`<tr>
+      <td style="font-size:10px;color:var(--text2)">${esc(o.id)}</td>
+      <td style="font-size:11px">${esc(o.date)}</td>
+      <td>${esc(o.client)}</td>
+      <td>${fmt(o.prix*o.qte)}</td>
+      <td>${badge(o.statut)}</td>
+      <td style="font-size:11px;color:#FCA5A5">${esc(o.motif)||'—'}</td>
+    </tr>`).join('')||'<tr><td colspan="6"><div class="empty">Aucune commande sur cette période</div></td></tr>'}
+  </table></div>
+</div>`;
+}
+
+// ── BILAN LIVREUR ─────────────────────────────────────────────
+function rBilanLiv() {
+  const moi = URL_NOM || cfg.livreurs[0]?.nom || '';
+  const today = new Date().toISOString().split('T')[0];
+  const defFrom = filterFrom || new Date(new Date().setDate(1)).toISOString().split('T')[0];
+  const myOrders = filterOrders(orders.filter(o=>o.livreur===moi));
+  const liv = myOrders.filter(o=>o.statut==='Livrée ✓').length;
+  const ref = myOrders.filter(o=>o.statut==='Refusée').length;
+  const ca  = myOrders.filter(o=>o.statut==='Livrée ✓').reduce((s,o)=>s+o.prix*o.qte,0);
+  // Commissions supprimées
+  const taux = myOrders.length>0?Math.round(liv/myOrders.length*100):0;
+
+  return `
+<div class="card">
+  <div class="ch">📅 Mon bilan — ${esc(moi)}</div>
+  <div class="cb">
+    <div class="g2" style="margin-bottom:10px">
+      <div class="fr"><label>Du</label><input type="date" id="f_from" value="${filterFrom||defFrom}"></div>
+      <div class="fr"><label>Au</label><input type="date" id="f_to" value="${filterTo||today}"></div>
+    </div>
+    <button class="btn btn-p btn-bl" onclick="applyFilter()">📊 Appliquer le filtre</button>
+  </div>
+</div>
+<div class="kpi-grid">
+  <div class="kpi" style="border-top-color:#6C63FF"><div class="kl">Total assignées</div><div class="kv">${myOrders.length}</div></div>
+  <div class="kpi" style="border-top-color:#10B981"><div class="kl">Livrées ✓</div><div class="kv">${liv}</div></div>
+  <div class="kpi" style="border-top-color:#EF4444"><div class="kl">Refusées</div><div class="kv">${ref}</div></div>
+  <div class="kpi" style="border-top-color:#10B981"><div class="kl">Taux succès</div><div class="kv">${taux}%</div></div>
+</div>
+<div class="card">
+  <div class="ch">📊 Taux de succès : <strong style="color:${taux>=80?'var(--green)':'var(--red)'}">${taux}%</strong></div>
+  <div class="tw"><table>
+    <tr><th>ID</th><th>Date</th><th>Client</th><th>COD collecté</th><th>Résultat</th><th>Motif</th></tr>
+    ${myOrders.map(o=>`<tr>
+        <td style="font-size:10px;color:var(--text2)">${esc(o.id)}</td>
+        <td style="font-size:11px">${esc(o.date)}</td>
+        <td>${esc(o.client)}</td>
+        <td><strong>${o.statut==='Livrée ✓'?fmt(o.prix*o.qte):'—'}</strong></td>
+        <td>${badge(o.statut)}</td>
+        <td style="font-size:11px;color:#FCA5A5">${esc(o.motif)||'—'}</td>
+      </tr>`).join('')||'<tr><td colspan="7"><div class="empty">Aucune commande sur cette période</div></td></tr>'}
+  </table></div>
+</div>`;
+}
+
+// ══════════════════════════════════════════════════════════════
+//  INIT
+// ══════════════════════════════════════════════════════════════
+async function init() {
+  // Devise
+  document.getElementById('cur-lbl').textContent = curCode;
+
+  // Vérification archivage mensuel
+  archiveAndReset();
+
+  // Rôle via URL
+  if(URL_ROLE&&['closeur','livreur'].includes(URL_ROLE)) {
+    role=URL_ROLE;
+    tab=role==='closeur'?'mes_cmd':'mes_liv';
+    document.getElementById('rbar').style.display='none';
+  }
+
+  // 1. Données locales immédiatement
+  const local=loadLocal();
+  if(local.length>0) { orders=local; render(); }
+
+  // 2. Config depuis Sheet
+  setSyncStatus('load');
+  try {
+    cfg=await loadConfig();
+    console.log(`✅ Config: ${cfg.produits.length} produits | ${cfg.closeurs.length} closeurs | ${cfg.livreurs.length} livreurs`);
+  } catch(e) { console.error('Config error:',e.message); }
+
+  // 3. Commandes depuis Sheet
+  try {
+    const sheetOrders=await loadOrders();
+    const sheetIds=new Set(sheetOrders.map(x=>x.id));
+    const localOnly=orders.filter(x=>x._local&&!sheetIds.has(x.id));
+    orders=[...localOnly,...sheetOrders];
+    saveLocal();
+    setSyncStatus('ok');
+    console.log(`✅ ${orders.length} commandes (${sheetOrders.length} Sheet + ${localOnly.length} local)`);
+  } catch(e) {
+    setSyncStatus('err');
+    console.error('Orders error:',e.message);
+  }
+
+  render();
+
+  // 4. Rafraîchissement auto toutes les 60s
+  setInterval(async()=>{
+    try {
+      const [so,c]=await Promise.all([loadOrders(),loadConfig()]);
+      const sids=new Set(so.map(x=>x.id));
+      const loc=orders.filter(x=>x._local&&!sids.has(x.id));
+      orders=[...loc,...so]; cfg=c;
+      saveLocal(); setSyncStatus('ok'); render();
+    } catch(e){ setSyncStatus('err'); }
+  },10000);
+}
+
+init();
+</script>
+</body>
+</html>
+ ×${o.qte}</div>
+    <div class="cod">
+      <div><div class="cod-l">Montant COD à collecter</div><div class="cod-a">${fmt(o.prix*o.qte)}</div></div>
+      <div style="text-align:right"><div class="cod-l">Ta commission</div><div style="font-size:18px;font-weight:700;color:var(--ac)">${fmt(o.frais)}</div></div>
+    </div>
+    <div class="arow">
+      ${o.statut!=='En livraison'?`<button class="btn bw" onclick="updSt('${esc(o.id)}','En livraison');toast('🚗 En route')">🚗 En route</button>`:''}
+      <button class="btn bs" style="flex:1" onclick="updSt('${esc(o.id)}','Livrée ✓');toast('✅ Livraison confirmée !')">✓ Livrée & COD collecté</button>
+      <button class="btn bd" onclick="openMotif('ref','${esc(o.id)}')">✕ Refusée</button>
+    </div>
+  </div>`).join('')}`;
+}
+
+// ════════════════════════════════════════════════
+//  BILANS
+// ════════════════════════════════════════════════
+function bilanFiltre(list){
+  const today=new Date().toISOString().split('T')[0];
+  const df=new Date(new Date().setDate(1)).toISOString().split('T')[0];
+  return `<div class="card"><div class="ch">📅 Filtrer la période</div><div class="cb">
+    <div class="g2" style="margin-bottom:10px">
+      <div class="fr"><label>Du</label><input type="date" id="ff" value="${filterFrom||df}"></div>
+      <div class="fr"><label>Au</label><input type="date" id="ft" value="${filterTo||today}"></div>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="btn bp" style="flex:1" onclick="applyF()">📊 Appliquer</button>
+      <button class="btn" onclick="resetF()">✕ Tout le mois</button>
+    </div>
+  </div></div>`;
+}
+
+function rBilanC(){
+  const moi=URL_NOM||cfg.closeurs[0]?.nom||'';
+  const fd=filtered(orders.filter(o=>o.closeur===moi));
+  const liv=fd.filter(o=>o.statut==='Livrée ✓').length;
+  const ann=fd.filter(o=>o.statut==='Annulée').length;
+  const ca=fd.filter(o=>o.statut==='Livrée ✓').reduce((s,o)=>s+o.prix*o.qte,0);
+  const cl=cfg.closeurs.find(x=>x.nom===moi);
+  const comm=fd.filter(o=>o.statut==='Livrée ✓').reduce((s,o)=>s+o.prix*o.qte*(cl?.commission||3)/100,0);
+  const tx=fd.length>0?Math.round(liv/fd.length*100):0;
+  return bilanFiltre()+`
+  <div class="kg">
+    <div class="kpi" style="border-top-color:#6C63FF"><div class="kl">Total</div><div class="kv">${fd.length}</div></div>
+    <div class="kpi" style="border-top-color:#10B981"><div class="kl">Confirmées</div><div class="kv">${liv}</div></div>
+    <div class="kpi" style="border-top-color:#EF4444"><div class="kl">Annulées</div><div class="kv">${ann}</div></div>
+    <div class="kpi" style="border-top-color:#F59E0B"><div class="kl">Ma commission</div><div class="kv">${fmt(comm)}</div></div>
+  </div>
+  <div class="card"><div class="ch">Taux de confirmation : <strong style="color:${tx>=75?'var(--gr)':'var(--re)'}">${tx}%</strong></div>
+  <div class="tw"><table>
+    <tr><th>ID</th><th>Date</th><th>Client</th><th>Montant</th><th>Statut</th><th>Motif</th></tr>
+    ${fd.map(o=>`<tr>
+      <td style="font-size:10px;color:var(--t2)">${esc(o.id)}</td>
+      <td style="font-size:11px">${esc(o.date)}</td><td>${esc(o.client)}</td>
+      <td>${fmt(o.prix*o.qte)}</td><td>${badge(o.statut)}</td>
+      <td style="font-size:11px;color:#FCA5A5">${esc(o.motif)||'—'}</td>
+    </tr>`).join('')||'<tr><td colspan="6"><div class="empty">Aucune donnée</div></td></tr>'}
+  </table></div></div>`;
+}
+
+function rBilanL(){
+  const moi=URL_NOM||cfg.livreurs[0]?.nom||'';
+  const fd=filtered(orders.filter(o=>o.livreur===moi));
+  const liv=fd.filter(o=>o.statut==='Livrée ✓').length;
+  const ref=fd.filter(o=>o.statut==='Refusée').length;
+  const lv=cfg.livreurs.find(x=>x.nom===moi);
+  const comm=fd.filter(o=>o.statut==='Livrée ✓').reduce((s,o)=>s+(lv?.frais||3.5),0);
+  const tx=fd.length>0?Math.round(liv/fd.length*100):0;
+  return bilanFiltre()+`
+  <div class="kg">
+    <div class="kpi" style="border-top-color:#6C63FF"><div class="kl">Total</div><div class="kv">${fd.length}</div></div>
+    <div class="kpi" style="border-top-color:#10B981"><div class="kl">Livrées</div><div class="kv">${liv}</div></div>
+    <div class="kpi" style="border-top-color:#EF4444"><div class="kl">Refusées</div><div class="kv">${ref}</div></div>
+    <div class="kpi" style="border-top-color:#F59E0B"><div class="kl">Mes commissions</div><div class="kv">${fmt(comm)}</div></div>
+  </div>
+  <div class="card"><div class="ch">Taux de succès : <strong style="color:${tx>=80?'var(--gr)':'var(--re)'}">${tx}%</strong></div>
+  <div class="tw"><table>
+    <tr><th>ID</th><th>Date</th><th>Client</th><th>COD</th><th>Commission</th><th>Résultat</th></tr>
+    ${fd.map(o=>`<tr>
+      <td style="font-size:10px;color:var(--t2)">${esc(o.id)}</td>
+      <td style="font-size:11px">${esc(o.date)}</td><td>${esc(o.client)}</td>
+      <td><strong>${o.statut==='Livrée ✓'?fmt(o.prix*o.qte):'—'}</strong></td>
+      <td style="color:var(--gr)">${o.statut==='Livrée ✓'?fmt(lv?.frais||3.5):'—'}</td>
+      <td>${badge(o.statut)}</td>
+    </tr>`).join('')||'<tr><td colspan="6"><div class="empty">Aucune donnée</div></td></tr>'}
+  </table></div></div>`;
+}
+
+// ════════════════════════════════════════════════
+//  HISTORIQUES
+// ════════════════════════════════════════════════
+function rHClo(){
+  const moi=URL_NOM||cfg.closeurs[0]?.nom||'';
+  const hist=orders.filter(o=>o.closeur===moi&&['Livrée ✓','Annulée','Refusée'].includes(o.statut));
+  return `<div class="card"><div class="ch">🕐 Historique</div><div class="tw"><table>
+    <tr><th>ID</th><th>Client</th><th>Montant</th><th>Statut</th><th>Motif</th></tr>
+    ${hist.map(o=>`<tr><td style="font-size:10px;color:var(--t2)">${esc(o.id)}</td><td>${esc(o.client)}</td>
+      <td>${fmt(o.prix*o.qte)}</td><td>${badge(o.statut)}</td>
+      <td style="font-size:11px;color:#FCA5A5">${esc(o.motif)||'—'}</td></tr>`).join('')
+    ||'<tr><td colspan="5"><div class="empty">Aucun historique</div></td></tr>'}
+  </table></div></div>`;
+}
+function rHLiv(){
+  const moi=URL_NOM||cfg.livreurs[0]?.nom||'';
+  const hist=orders.filter(o=>o.livreur===moi&&['Livrée ✓','Refusée'].includes(o.statut));
+  return `<div class="card"><div class="ch">✓ Historique livraisons</div><div class="tw"><table>
+    <tr><th>ID</th><th>Client</th><th>Montant</th><th>Résultat</th><th>Motif</th></tr>
+    ${hist.map(o=>`<tr><td style="font-size:10px;color:var(--t2)">${esc(o.id)}</td><td>${esc(o.client)}</td>
+      <td><strong>${fmt(o.prix*o.qte)}</strong></td><td>${badge(o.statut)}</td>
+      <td style="font-size:11px;color:#FCA5A5">${esc(o.motif)||'—'}</td></tr>`).join('')
+    ||'<tr><td colspan="5"><div class="empty">Aucun historique</div></td></tr>'}
+  </table></div></div>`;
+}
+
+// ════════════════════════════════════════════════
+//  MODALS
+// ════════════════════════════════════════════════
+function openAsgn(id){
+  const o=orders.find(x=>x.id===id);
+  const lvs=cfg.livreurs.filter(l=>!o.ville||l.ville===o.ville);
+  openModal(`<h3>✏️ Modifier — ${esc(id)}</h3>
+    <p class="msub">${esc(o.client)} · ${esc(o.ville)} · ${badge(o.statut)}</p>
+    <div class="fr"><label>Closeur</label><select id="m_cl"><option value="">— Non assigné —</option>
+      ${cfg.closeurs.map(c=>`<option ${o.closeur===c.nom?'selected':''}>${c.nom}</option>`).join('')}</select></div>
+    <div class="fr"><label>Livreur</label><select id="m_lv"><option value="">— Non assigné —</option>
+      ${(lvs.length?lvs:cfg.livreurs).map(l=>`<option ${o.livreur===l.nom?'selected':''}>${l.nom}</option>`).join('')}</select></div>
+    <div class="fr"><label>Statut</label><select id="m_st">${Object.keys(STM).map(s=>`<option ${o.statut===s?'selected':''}>${s}</option>`).join('')}</select></div>
+    <div class="mbtns">
+      <button class="btn" style="flex:1" onclick="closeModal()">Annuler</button>
+      <button class="btn bp" style="flex:1" onclick="saveAsgn('${esc(id)}')">Enregistrer</button>
+    </div>`);
+}
+async function saveAsgn(id){
+  const cl=document.getElementById('m_cl')?.value;
+  const lv=document.getElementById('m_lv')?.value;
+  const st=document.getElementById('m_st')?.value;
+  const o=orders.find(x=>x.id===id);
+  if(cl&&cl!==o.closeur) await asgClo(id,cl);
+  if(lv&&lv!==o.livreur) await asgLiv(id,lv);
+  if(st&&st!==o.statut)  await updSt(id,st,'');
+  closeModal();toast('✓ Mis à jour');
+}
+function openAsgLiv(id){
+  const o=orders.find(x=>x.id===id);
+  const lvs=cfg.livreurs.filter(l=>!o.ville||l.ville===o.ville);
+  openModal(`<h3>🚚 Assigner livreur</h3>
+    <p class="msub">${esc(o.client)} · ${esc(o.ville)}</p>
+    <div class="fr"><label>Livreur</label><select id="m_lv2">
+      ${(lvs.length?lvs:cfg.livreurs).map(l=>`<option>${l.nom}</option>`).join('')}</select></div>
+    <div class="mbtns">
+      <button class="btn" style="flex:1" onclick="closeModal()">Annuler</button>
+      <button class="btn bp" style="flex:1" onclick="doAsgLiv('${esc(id)}')">Assigner</button>
+    </div>`);
+}
+async function doAsgLiv(id){const lv=document.getElementById('m_lv2')?.value;await asgLiv(id,lv);closeModal();toast(`🚚 Assigné à ${lv}`);}
+
+function openTL(id){
+  const o=orders.find(x=>x.id===id);
+  const steps=[
+    {c:'#6C63FF',t:'Commande créée',d:o.date},
+    o.closeur&&{c:'#F59E0B',t:'Closeur assigné',d:o.closeur},
+    ['Confirmée','Assignée livreur','En livraison','Livrée ✓'].includes(o.statut)&&{c:'#10B981',t:'Confirmée'},
+    o.livreur&&{c:'#F97316',t:'Livreur assigné',d:o.livreur},
+    ['En livraison','Livrée ✓'].includes(o.statut)&&{c:'#F59E0B',t:'En livraison'},
+    o.statut==='Livrée ✓'&&{c:'#10B981',t:'✓ Livrée — COD collecté'},
+    o.motif&&{c:'#EF4444',t:o.statut,d:o.motif},
+  ].filter(Boolean);
+  openModal(`<h3>🕐 Suivi — ${esc(id)}</h3>
+    <p class="msub">${esc(o.client)} · ${esc(o.produit)} · <strong>${fmt(o.prix*o.qte)}</strong></p>
+    ${steps.map(s=>`<div style="display:flex;gap:10px;margin-bottom:12px">
+      <div style="width:10px;height:10px;border-radius:50%;background:${s.c};flex-shrink:0;margin-top:3px"></div>
+      <div style="font-size:12px;color:var(--t2)"><strong style="color:var(--t)">${esc(s.t)}</strong>${s.d?`<br>${esc(s.d)}`:''}</div>
+    </div>`).join('')}
+    <div style="text-align:center;margin:8px 0">${badge(o.statut)}</div>
+    ${o.motif?`<div style="background:var(--re2);border-radius:var(--rs);padding:8px 10px;font-size:12px;color:#FCA5A5"><strong style="display:block;font-size:10px;text-transform:uppercase;margin-bottom:2px;opacity:.7">Motif</strong>${esc(o.motif)}</div>`:''}
+    <div class="mbtns"><button class="btn" style="flex:1" onclick="closeModal()">Fermer</button></div>`);
+}
+
+function confirmDel(id){
+  const o=orders.find(x=>x.id===id);
+  openModal(`<h3>🗑️ Supprimer ?</h3>
+    <p class="msub">${esc(o.id)} — ${esc(o.client)}</p>
+    <div style="background:var(--re2);border:1px solid rgba(239,68,68,.3);border-radius:var(--rs);padding:10px;font-size:12px;color:#FCA5A5;margin-bottom:14px">⚠️ Action irréversible — supprimée de l'app et du Sheet.</div>
+    <div class="mbtns">
+      <button class="btn" style="flex:1" onclick="closeModal()">Annuler</button>
+      <button class="btn bd" style="flex:1" onclick="delOrder('${esc(id)}')">Supprimer</button>
+    </div>`);
+}
+async function delOrder(id){
+  orders=orders.filter(x=>x.id!==id);
+  await post({action:'DELETE_COMMANDE',cmdId:id});
+  closeModal();render();toast('🗑️ Supprimée');
+}
+
+function openMotif(type,id){
+  const o=orders.find(x=>x.id===id);
+  const mo=type==='ann'?MA:MR;
+  openModal(`<h3>${type==='ann'?'✕ Annuler':'✕ Marquer refusée'}</h3>
+    <p class="msub">${esc(o.id)} — ${esc(o.client)}</p>
+    <div class="mopts">${mo.map(m=>`<button class="mopt" onclick="selMot(this,'${esc(m)}')">${esc(m)}</button>`).join('')}</div>
+    <div class="fr" id="ar" style="display:none"><label>Préciser</label><textarea id="ma" placeholder="Décrivez..."></textarea></div>
+    <div class="fr"><label>Commentaire</label><textarea id="mc" style="min-height:54px" placeholder="Infos supplémentaires..."></textarea></div>
+    <div class="mbtns">
+      <button class="btn" style="flex:1" onclick="closeModal()">Retour</button>
+      <button class="btn bd" style="flex:1" onclick="submitMot('${type}','${esc(id)}')">Enregistrer</button>
+    </div>`);
+}
+function selMot(btn,val){
+  document.querySelectorAll('.mopt').forEach(b=>b.classList.remove('sel'));
+  btn.classList.add('sel');btn.dataset.val=val;
+  const ar=document.getElementById('ar');if(ar) ar.style.display=val==='Autre'?'block':'none';
+}
+async function submitMot(type,id){
+  const sel=document.querySelector('.mopt.sel');
+  if(!sel){toast('⚠️ Choisis un motif');return;}
+  const base=sel.dataset.val;
+  const autre=document.getElementById('ma')?.value||'';
+  const comment=document.getElementById('mc')?.value||'';
+  const motif=(base==='Autre'?autre||'Autre':base)+(comment?` — ${comment}`:'');
+  await updSt(id,type==='ann'?'Annulée':'Refusée',motif);
+  closeModal();toast('Motif enregistré');
+}
+
+// ════════════════════════════════════════════════
+//  INIT
+// ════════════════════════════════════════════════
+async function init(){
+  document.getElementById('clbl').textContent=curCode;
+  // Rôle URL
+  if(URL_ROLE&&['closeur','livreur'].includes(URL_ROLE)){
+    role=URL_ROLE;tab=role==='closeur'?'mes_cmd':'mes_liv';
+    document.getElementById('rbar').style.display='none';
+  }
+  setSS('load');
+  // Charge config
+  try{cfg=await loadConfig();console.log(`✅ Config: ${cfg.produits.length}P ${cfg.closeurs.length}C ${cfg.livreurs.length}L`);}
+  catch(e){console.error('Config:',e.message);}
+  // Charge commandes
+  try{
+    orders=await loadOrders();
+    setSS('ok');
+    console.log(`✅ ${orders.length} commandes`);
+  }catch(e){setSS('err');console.error('Orders:',e.message);}
+  render();
+  // Refresh toutes les 60s — toujours depuis le Sheet (source unique)
+  setInterval(async()=>{
+    try{
+      const [o,c]=await Promise.all([loadOrders(),loadConfig()]);
+      orders=o;cfg=c;setSS('ok');render();
+    }catch(e){setSS('err');}
+  },60000);
+}
+init();
+</script>
+</body>
+</html>
