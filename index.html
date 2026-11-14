@@ -410,7 +410,7 @@ async function activerNotifs(clic){
     if(!token)throw new Error('pas de token');
     const j=await api({action:'REGISTER',token});
     if(j.ok){localStorage.setItem('CA_FCM',token);bell.style.display='none';if(clic)toast('🔔 Notifications activées');}
-  }catch(e){console.error('Push:',e);if(clic)toast('Activation impossible : '+(e.message||e),5000);}
+  }catch(e){console.error('Push:',e);if(clic){toast('Activation impossible — lancement du test…',3000);setTimeout(diagNotifs,600);}}
 }
 const editing=()=>tab==='acces'&&/INPUT|SELECT|TEXTAREA/.test(document.activeElement?.tagName||'');
 // Compteur sur l'icône : remis à zéro dès que l'app est ouverte (et les notifications lues sont retirées)
@@ -831,7 +831,46 @@ function openGuide(r){
   const me=(UROLE==='admin')?(r||'admin'):guideRole();
   const tabs=UROLE==='admin'?`<div style="display:flex;gap:6px;margin-bottom:10px">${['admin','closeur','livreur','societe'].map(x=>`<button class="btn bsm" style="flex:1;padding:6px 4px;${x===me?'background:var(--ac);color:#fff;border-color:var(--ac)':''}" onclick="openGuide('${x}')">${x==='societe'?'🏢 Société':ROLE_L[x]}</button>`).join('')}</div>`:'';
   const wel=UROLE==='admin'&&(me==='closeur'||me==='livreur')?`<div style="background:var(--bg3);border:1px solid var(--b2);border-radius:var(--rs);padding:10px;margin:10px 0"><div style="font-size:11px;color:#888;margin-bottom:6px">Message de bienvenue à envoyer à ${me==='closeur'?'tes closeuses':'tes livreurs'} :</div><div style="font-size:12px;white-space:pre-wrap;line-height:1.6">${esc(welcomeText(me,'[Prénom]'))}</div><button class="btn bsm" style="margin-top:8px" onclick="copyWelcome('${me}')">📋 Copier ce message</button></div>`:'';
-  openModal(`<h3>${GUIDE[me].t}</h3><div class="msub">Touche un titre pour le déplier</div>${tabs}<div style="max-height:56vh;overflow:auto">${guideSecs(me)}${wel}</div><div style="font-size:12px;color:#888;text-align:center;margin-top:10px">${UROLE==='admin'?'':'Un problème ? Contacte ton administrateur.'}${UROLE===me||(UROLE==='livreur'&&me==='societe')?`${UROLE==='admin'?'':' · '}<a href="#" style="color:var(--ac)" onclick="event.preventDefault();revoirBienvenue()">Revoir la bienvenue</a>`:''}</div><div class="mbtns"><button class="btn bp" style="flex:1" onclick="closeModal()">Fermer</button></div>`);
+  openModal(`<h3>${GUIDE[me].t}</h3><div class="msub">Touche un titre pour le déplier</div><button class="btn bs" style="width:100%;margin-bottom:10px" onclick="diagNotifs()">🔔 Tester mes notifications</button>${tabs}<div style="max-height:56vh;overflow:auto">${guideSecs(me)}${wel}</div><div style="font-size:12px;color:#888;text-align:center;margin-top:10px">${UROLE==='admin'?'':'Un problème ? Contacte ton administrateur.'}${UROLE===me||(UROLE==='livreur'&&me==='societe')?`${UROLE==='admin'?'':' · '}<a href="#" style="color:var(--ac)" onclick="event.preventDefault();revoirBienvenue()">Revoir la bienvenue</a>`:''}</div><div class="mbtns"><button class="btn bp" style="flex:1" onclick="closeModal()">Fermer</button></div>`);
+}
+
+/* ═══════════ TEST DES NOTIFICATIONS : vérifie chaque étape et dit laquelle bloque ═══════════ */
+async function diagNotifs(){
+  const L=[];let stop=false;
+  const ligne=(ok,t,d)=>L.push(`<div style="display:flex;gap:10px;padding:9px 0;border-bottom:1px solid var(--b)"><div style="font-size:18px">${ok===true?'✅':ok===false?'❌':'⏳'}</div><div style="flex:1"><div style="font-weight:800;font-size:13px">${t}</div>${d?`<div style="font-size:12px;color:#999;margin-top:3px;line-height:1.55">${d}</div>`:''}</div></div>`);
+  const show=(fin)=>openModal(`<h3>🔔 Test des notifications</h3><div class="msub">${fin?'Résultat du test':'Vérification en cours…'}</div><div style="max-height:60vh;overflow:auto">${L.join('')}</div><div class="mbtns"><button class="btn" style="flex:1" onclick="diagNotifs()">↻ Refaire</button><button class="btn bp" style="flex:1" onclick="closeModal()">Fermer</button></div>`);
+  const ios=isIOS();
+  // 1. appareil
+  if(ios&&!isInstalled()){ligne(false,'iPhone : l\'app doit être ouverte depuis l\'écran d\'accueil',`Sur iPhone, les notifications ne marchent <b>que</b> dans l'app installée. Ouvre ton lien dans <b>Safari</b> → Partager → « Sur l'écran d'accueil », puis ouvre l'app depuis cette icône et refais ce test. (iOS 16.4 minimum.)`);show(true);return;}
+  if(!pushOK()){ligne(false,'Ce navigateur ne gère pas les notifications',ios?'Mets ton iPhone à jour (iOS 16.4 ou plus).':'Utilise <b>Chrome</b> à jour. Les navigateurs intégrés (Facebook, WhatsApp, Opera Mini…) ne les gèrent pas : ouvre le lien dans Chrome.');show(true);return;}
+  ligne(true,'Appareil compatible',ios?'iPhone, app installée sur l\'écran d\'accueil':'');
+  // 2. permission
+  const perm=Notification.permission;
+  if(perm==='denied'){ligne(false,'Notifications bloquées sur ce téléphone',ios?'Réglages → Notifications → Bencor Shop → Autoriser.':'Dans Chrome : touche le cadenas 🔒 à gauche de l\'adresse → Autorisations → Notifications → Autoriser. Vérifie aussi Paramètres Android → Applications → Chrome → Notifications.');show(true);return;}
+  if(perm!=='granted'){ligne(false,'Notifications pas encore autorisées',`<button class="btn bp bsm" style="margin-top:6px" onclick="activerNotifs(true).then(diagNotifs)">Autoriser maintenant</button>`);show(true);return;}
+  ligne(true,'Notifications autorisées');show();
+  // 3. service worker
+  let reg=null;try{reg=await Promise.race([navigator.serviceWorker.ready,new Promise(r=>setTimeout(()=>r(null),6000))]);}catch(e){}
+  if(!reg||!reg.active){ligne(false,'Le moteur de notifications de l\'app ne démarre pas','Ferme complètement l\'app puis rouvre-la. Si ça persiste, vide les données du site (Chrome → ⋮ → Paramètres → Paramètres des sites → app.bencorshop.com → Effacer).');show(true);return;}
+  ligne(true,'Moteur de notifications actif');show();
+  // 4. jeton Firebase + enregistrement
+  try{
+    const m=await getMessaging();
+    const token=await m.getToken({vapidKey:VAPID_KEY,serviceWorkerRegistration:reg});
+    if(!token)throw new Error('aucun jeton reçu');
+    const j=await api({action:'REGISTER',token});
+    if(!j||!j.ok)throw new Error((j&&j.msg)||'enregistrement refusé par le serveur');
+    try{localStorage.setItem('CA_FCM',token);}catch(e){}
+    ligne(true,'Téléphone enregistré pour recevoir les notifications');
+  }catch(e){ligne(false,'Firebase ne donne pas d\'autorisation à ce téléphone',esc(String(e.message||e))+'<br>Vérifie la connexion internet. Si le message parle de « VAPID » ou « applicationServerKey », la clé VAPID de firebase-config.js est fausse.');show(true);return;}
+  show();
+  // 5. envoi réel depuis le serveur
+  let j=null;try{j=await api({action:'PUSH_TEST'});}catch(e){}
+  if(!j){ligne(false,'Le serveur ne répond pas','Vérifie la connexion, ou que la dernière version de Code.gs est bien déployée (Nouvelle version).');show(true);return;}
+  if(!j.ok){ligne(false,j.etape==='serveur'?'Problème côté serveur (Apps Script)':j.etape==='appareil'?'Aucun appareil enregistré':'Envoi refusé par Google',esc(j.msg||''));}
+  else ligne(true,'Notification de test envoyée',`${esc(j.msg)}<br><b>Réduis l'app maintenant</b> (ou verrouille l'écran) : elle doit arriver dans les 10 secondes. Si l'app reste ouverte, tu verras seulement un petit message en bas de l'écran.<br><br>Rien n'arrive ? Vérifie le mode « Ne pas déranger » et l'économiseur de batterie, puis refais le test.`);
+  if(j.appareils){L.push(`<div style="font-size:11px;font-weight:800;color:#888;margin:12px 0 4px;text-transform:uppercase">Appareils enregistrés (toute l'équipe)</div>`+(j.appareils.length?j.appareils.map(a=>`<div style="display:flex;justify-content:space-between;font-size:13px;padding:4px 0"><span>${esc(a.qui)}</span><b>${a.n} 📱</b></div>`).join(''):'<div style="font-size:12px;color:#999">Personne n\'a encore activé les notifications.</div>')+`<div style="font-size:11px;color:#888;margin-top:6px">Une personne absente de cette liste ne reçoit rien : elle doit toucher 🔔 dans son app.</div>`);}
+  show(true);
 }
 function copyWelcome(r){navigator.clipboard.writeText(welcomeText(r,'[Prénom]')).then(()=>toast('✓ Message copié')).catch(()=>toast('Copie impossible'));}
 let _instEvt=null;
