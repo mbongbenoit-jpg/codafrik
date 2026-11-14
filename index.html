@@ -424,7 +424,7 @@ window.addEventListener('focus',clearBadge);
 async function refreshNow(){try{const[o,c]=await Promise.all([loadOrders(),loadConfig()]);orders=o;cfg=c;ss('');if(!editing())render();}catch(e){}}
 function parseCSV(txt){const rows=[];for(const line of txt.split('\n')){if(!line.trim())continue;const cells=[];let c='',inQ=false;for(let i=0;i<line.length;i++){const ch=line[i];if(ch==='"'){if(inQ&&line[i+1]==='"'){c+='"';i++;}else inQ=!inQ;}else if(ch===','&&!inQ){cells.push(c.trim());c='';}else c+=ch;}cells.push(c.trim());rows.push(cells);}return rows;}
 const C={ID:0,DATE:1,QUARTIER:2,CLIENT:3,TEL:4,PAYS:5,VILLE:6,PRODUIT:7,QTE:8,PRIX:10,FRAIS:12,CLOSEUR:14,LIVREUR:16,DATELIV:18,STATUT:19,MOTIF:20,SOURCE:23};
-async function loadOrders(){const rows=(await fetchData()).commandes;return rows.filter(r=>r[C.CLIENT]?.trim()).map(r=>({id:r[C.ID]||'',date:r[C.DATE]||'',shopify:r[C.SHOPIFY]||'',client:r[C.CLIENT]||'',tel:r[C.TEL]||'',pays:r[C.PAYS]||'',ville:r[C.VILLE]||'',produit:r[C.PRODUIT]||'',qte:parseInt(r[C.QTE])||1,prixL:parseFloat(String(r[C.PRIX]||'0').replace(/[^0-9,.]/g,'').replace(',','.'))||0,fraisL:parseFloat(String(r[C.FRAIS]||'0').replace(/[^0-9,.]/g,'').replace(',','.'))||0,dev:devPays(r[C.PAYS]),closeur:r[C.CLOSEUR]||'',livreur:r[C.LIVREUR]||'',statut:r[C.STATUT]||'En attente',motif:r[C.MOTIF]||'',quartier:r[C.QUARTIER]||'',coursier:r[24]||'',dateLiv:(()=>{const d=(r[C.DATELIV]||'').split('|');return d[0]||'';})(),heureLiv:(()=>{const d=(r[C.DATELIV]||'').split('|');return d[1]||'';})(),noteLiv:(()=>{const d=(r[C.DATELIV]||'').split('|');return d.slice(2).join('|')||'';})(),source:r[C.SOURCE]||'',reports:r[25]||'',maj:r[26]||'',tent:r[27]||''})).map(o=>{o.prix=toUSD(o.prixL,o.dev);o.frais=toUSD(o.fraisL,o.dev);return o;});}
+async function loadOrders(){const rows=(await fetchData()).commandes;return rows.filter(r=>r[C.CLIENT]?.trim()).map(r=>({id:r[C.ID]||'',date:r[C.DATE]||'',shopify:r[C.SHOPIFY]||'',client:r[C.CLIENT]||'',tel:r[C.TEL]||'',pays:r[C.PAYS]||'',ville:r[C.VILLE]||'',produit:r[C.PRODUIT]||'',qte:parseInt(r[C.QTE])||1,prixL:parseFloat(String(r[C.PRIX]||'0').replace(/[^0-9,.]/g,'').replace(',','.'))||0,fraisL:parseFloat(String(r[C.FRAIS]||'0').replace(/[^0-9,.]/g,'').replace(',','.'))||0,dev:devPays(r[C.PAYS]),closeur:r[C.CLOSEUR]||'',livreur:r[C.LIVREUR]||'',statut:r[C.STATUT]||'En attente',motif:r[C.MOTIF]||'',quartier:r[C.QUARTIER]||'',coursier:r[24]||'',dateLiv:(()=>{const d=(r[C.DATELIV]||'').split('|');return d[0]||'';})(),heureLiv:(()=>{const d=(r[C.DATELIV]||'').split('|');return d[1]||'';})(),noteLiv:(()=>{const d=(r[C.DATELIV]||'').split('|');return d.slice(2).join('|')||'';})(),source:r[C.SOURCE]||'',reports:r[25]||'',maj:r[26]||'',tent:r[27]||'',vu:r[28]||''})).map(o=>{o.prix=toUSD(o.prixL,o.dev);o.frais=toUSD(o.fraisL,o.dev);return o;});}
 async function loadConfig(){const rows=(await fetchData()).config;const P=[],PV=[],LV=[],CL=[];for(const r of rows){const id=(r[0]||'').trim();if(!id)continue;if(id.startsWith('PRD')&&r[1])P.push({id,nom:r[1].trim(),prixVente:parseFloat(String(r[4]||'0').replace(',','.'))||0,besoin:String(r[8]||'').trim()});if(id.startsWith('PV')&&r[1]&&r[2]){const a=(r[4]||'O').trim();if(a==='O'||a==='')PV.push({pays:r[1].trim(),ville:r[2].trim()});}if(id.startsWith('LIV')&&r[1]){const a=(r[7]||'O').trim();if(a==='O'||a==='')LV.push({id,nom:(r[1]+' '+(r[2]||'')).trim(),tel:r[3]||'',pays:r[4]||'',ville:r[5]||'',frais:toUSD(parseFloat(String(r[6]||'').replace(',','.'))||0,devPays(r[4]))||3.5});}if(id.startsWith('CLO')&&r[1]){const a=(r[6]||'O').trim();if(a==='O'||a==='')CL.push({id,nom:(r[1]+' '+(r[2]||'')).trim(),tel:r[3]||'',commission:parseFloat(String(r[5]||'3').replace(',','.'))||3});}}const paysUniques=[...new Set(PV.map(p=>p.pays))].filter(Boolean);const villesParPays={};PV.forEach(p=>{if(!villesParPays[p.pays])villesParPays[p.pays]=[];if(!villesParPays[p.pays].includes(p.ville))villesParPays[p.pays].push(p.ville);});return{produits:P,paysUniques,villesParPays,livreurs:LV,closeurs:CL,coursiers:(await fetchData()).coursiers||[],reglements:(await fetchData()).reglements||[]};}
 async function post(payload){
   try {
@@ -578,7 +578,7 @@ function tabsFor(){return role==='livreur'&&isSoc()?[...TABS.livreur.slice(0,1),
 function renderNav(){const p=orders.filter(o=>o.statut==='En attente').length;document.getElementById('nav').innerHTML=tabsFor().map(t=>`<button class="nb ${tab===t.id?'on':''}" onclick="swTab('${t.id}')">${t.l}${t.id==='commandes'&&p?`<span class="pill">${p}</span>`:''}</button>`).join('');}
 function render(){renderNav();const M={dashboard:rDB,commandes:rCmd,bilan:rBilanA,closeurs_p:rClP,livreurs_p:rLvP,motifs:rMot,params:rPar,acces:rAcces,mes_cmd:rCloV,bilan_clo:rBilanC,histo_clo:rHClo,mes_liv:rLivV,bilan_liv:()=>rSolde()+rBilanL()+(isSoc()?rBilanCour():''),reglements:rReglements,mes_cour:rCoursiers,histo_liv:rHLiv};document.getElementById('main').innerHTML=(M[tab]||rDB)();}
 function filtrePicker(){const today=jourZone(TZ_DEFAUT);const df=today.slice(0,8)+'01';return `<div class="card"><div class="ch">📅 Période</div><div class="cb"><div class="g2" style="margin-bottom:10px"><div class="fr"><label>Du</label><input type="date" id="ff" value="${fFrom||df}"></div><div class="fr"><label>Au</label><input type="date" id="ft" value="${fTo||today}"></div></div><div style="display:flex;gap:8px"><button class="btn bp" style="flex:1" onclick="applyF()">📊 Appliquer</button><button class="btn" onclick="resetF()">✕ Tout</button></div></div></div>`;}
-function rDB(){const list=fd(orders);const tot=list.length,liv=list.filter(o=>o.statut==='Livrée ✓').length,ref=list.filter(o=>o.statut==='Refusée').length,ann=list.filter(o=>o.statut==='Annulée').length;const ca=list.filter(o=>o.statut==='Livrée ✓').reduce((s,o)=>s+o.prix*o.qte-o.frais,0);const tx=tot>0?Math.round(liv/tot*100):0,ec=list.filter(o=>!['Livrée ✓','Refusée','Annulée'].includes(o.statut)).length;const today=jourZone(TZ_DEFAUT),df=today.slice(0,8)+'01';return `${filtrePicker()}${retardAdmin()}${injAdmin(list)}<div class="kg"><div class="kpi" style="border-top-color:var(--ac)"><div class="kl">Commandes</div><div class="kv">${tot}</div><div class="ks">${ec} en cours</div></div><div class="kpi" style="border-top-color:var(--gr)"><div class="kl">CA net</div><div class="kv">${fmt(ca)}</div><div class="ks">${liv} livrées</div></div><div class="kpi" style="border-top-color:var(--gr)"><div class="kl">Taux livraison</div><div class="kv">${tx}%</div><div class="ks">&gt;80% objectif</div></div><div class="kpi" style="border-top-color:var(--re)"><div class="kl">Refus+Annul.</div><div class="kv">${ref+ann}</div><div class="ks">${tot>0?Math.round((ref+ann)/tot*100):0}%</div></div>
+function rDB(){const list=fd(orders);const tot=list.length,liv=list.filter(o=>o.statut==='Livrée ✓').length,ref=list.filter(o=>o.statut==='Refusée').length,ann=list.filter(o=>o.statut==='Annulée').length;const ca=list.filter(o=>o.statut==='Livrée ✓').reduce((s,o)=>s+o.prix*o.qte-o.frais,0);const tx=tot>0?Math.round(liv/tot*100):0,ec=list.filter(o=>!['Livrée ✓','Refusée','Annulée'].includes(o.statut)).length;const today=jourZone(TZ_DEFAUT),df=today.slice(0,8)+'01';return `${filtrePicker()}${retardAdmin()}${bilanAdmin()}${injAdmin(list)}<div class="kg"><div class="kpi" style="border-top-color:var(--ac)"><div class="kl">Commandes</div><div class="kv">${tot}</div><div class="ks">${ec} en cours</div></div><div class="kpi" style="border-top-color:var(--gr)"><div class="kl">CA net</div><div class="kv">${fmt(ca)}</div><div class="ks">${liv} livrées</div></div><div class="kpi" style="border-top-color:var(--gr)"><div class="kl">Taux livraison</div><div class="kv">${tx}%</div><div class="ks">&gt;80% objectif</div></div><div class="kpi" style="border-top-color:var(--re)"><div class="kl">Refus+Annul.</div><div class="kv">${ref+ann}</div><div class="ks">${tot>0?Math.round((ref+ann)/tot*100):0}%</div></div>
   ${(()=>{const rc=list.filter(o=>o.statut==='À rappeler').length;return `<div class="kpi" style="border-top-color:#FF3333;grid-column:span 2"><div class="kl">🔴 À rappeler</div><div class="kv" style="color:#FF3333">${rc}</div><div class="ks">${rc>0?'Action requise !':'✓ Aucun rappel en attente'}</div></div>`;})()}</div><div class="card"><div class="ch">🔴 Actions requises <span style="background:var(--re2);color:#FF8FAA;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700">${list.filter(o=>['En attente','Confirmée'].includes(o.statut)).length}</span></div>${list.filter(o=>['En attente','Confirmée'].includes(o.statut)).length===0?'<div class="empty">✓ Aucune action requise</div>':`<div class="tw"><table><tr><th>ID</th><th>Client</th><th>Ville</th><th>Montant</th><th>Statut</th><th></th></tr>${list.filter(o=>['En attente','Confirmée'].includes(o.statut)).map(o=>`<tr><td style="font-size:10px;color:#555">${esc(o.id)}</td><td><strong>${esc(o.client)}</strong></td><td>${esc(o.ville)}</td><td><strong>${fmt(o.prix*o.qte)}</strong></td><td>${badge(o.statut)}</td><td><button class="btn bsm bp" onclick="openAsgn('${esc(o.id)}')">Assigner</button></td></tr>`).join('')}</table></div>`}</div><div class="card"><div class="ch">📊 Par statut</div><div class="cb" style="display:grid;grid-template-columns:1fr 1fr;gap:6px">${Object.keys(STM).map(s=>{const n=list.filter(o=>o.statut===s).length;if(!n)return '';const p=tot>0?Math.round(n/tot*100):0;return `<div style="padding:10px;background:var(--bg3);border-radius:var(--rs)">${badge(s)}<div style="font-size:20px;font-weight:800;margin-top:4px">${n}</div><div style="font-size:10px;color:#555">${p}%</div></div>`;}).join('')}</div></div>
 ${(()=>{
   const rappel=list.filter(o=>o.statut==='À rappeler');
@@ -1041,6 +1041,19 @@ function injAdmin(list){
   <div style="font-size:11px;font-weight:800;color:#888;margin:8px 0 2px;text-transform:uppercase">Par closeuse</div>${tab(by('closeur'),'📞')}
   <div style="font-size:11px;font-weight:800;color:#888;margin:10px 0 2px;text-transform:uppercase">Par produit</div>${tab(by('produit'),'📦')}</div></div>`;
 }
+
+function bilanAdmin(){
+  const noms=[...new Set(orders.map(o=>o.closeur).filter(Boolean))];
+  const rows=noms.map(n=>[n,bilanJour(orders.filter(o=>o.closeur===n))]).filter(([,b])=>b.L||b.R||b.N||b.D||b.P||b.aVerif||b.enCours);
+  if(!rows.length)return '';
+  const tot=rows.reduce((t,[,b])=>{['L','R','N','D','P','aVerif','enCours','montant'].forEach(k=>t[k]=(t[k]||0)+b[k]);return t;},{});
+  const th='style="padding:6px 4px;font-size:10px;color:#888;font-weight:800;text-transform:uppercase;text-align:center"',td='style="padding:7px 4px;text-align:center;font-size:13px"';
+  return `<div class="card" style="margin-bottom:12px"><div class="ch">📊 Bilan du jour par closeuse <span style="font-size:11px;color:#888;font-weight:600">(${DRAP[TZ_DEFAUT]||''} ${fdate(jourZone(TZ_DEFAUT))})</span></div><div style="padding:6px 10px 12px;overflow-x:auto">
+  <table style="width:100%;border-collapse:collapse"><tr><th style="padding:6px 4px;font-size:10px;color:#888;font-weight:800;text-transform:uppercase;text-align:left">Closeuse</th><th ${th}>✅</th><th ${th}>❌</th><th ${th}>📅</th><th ${th}>🚚</th><th ${th}>🔎</th></tr>
+  ${rows.map(([n,b])=>`<tr style="border-top:1px solid var(--b)"><td style="padding:7px 4px;font-size:13px;font-weight:700">${esc(n)}<div style="font-size:11px;color:var(--gr);font-weight:600">${fmt(b.montant)}</div></td><td ${td}><b style="color:var(--gr)">${b.L}</b></td><td ${td}>${b.R+b.N}</td><td ${td}>${b.D}</td><td ${td}>${b.enCours}</td><td ${td}>${b.aVerif?`<b style="color:#C99BFF">${b.aVerif}</b>`:'✓'}</td></tr>`).join('')}
+  <tr style="border-top:2px solid var(--b2)"><td style="padding:7px 4px;font-weight:900">Total<div style="font-size:11px;color:var(--gr)">${fmt(tot.montant)}</div></td><td ${td}><b style="color:var(--gr)">${tot.L}</b></td><td ${td}>${tot.R+tot.N}</td><td ${td}>${tot.D}</td><td ${td}>${tot.enCours}</td><td ${td}>${tot.aVerif||'✓'}</td></tr></table>
+  <div style="font-size:11px;color:#888;margin-top:8px">✅ livrées · ❌ refusées/annulées · 📅 reportées · 🚚 prévues aujourd'hui encore en route · 🔎 résultats pas encore vus par la closeuse</div></div></div>`;
+}
 function retardAdmin(){
   const l=orders.map(o=>({o,r:retard(o)})).filter(x=>x.r);if(!l.length)return '';
   const liv={},clo={};
@@ -1117,16 +1130,83 @@ function cloCard(o){
     <div class="arow">${btns}</div>
   </div>`;
 }
+
+/* ═══════════ « À VÉRIFIER » : résultats des livraisons à voir par la closeuse avant archivage ═══════════ */
+function verifInfo(o){const v=String(o.vu||'').replace(/^'/,'').split('|');const t=v[1]?new Date(v[1]):null;return {etat:v[0]||'',t:t&&!isNaN(t)?t:null,type:v[2]||''};}
+const TYPE_OK={L:s=>s==='Livrée ✓',R:s=>s==='Refusée',N:s=>s==='Annulée',P:s=>s==='À rappeler',D:s=>ST_CHEZ.includes(s)};
+const aVerifier=o=>{const v=verifInfo(o);return v.etat==='A'&&!!TYPE_OK[v.type]&&TYPE_OK[v.type](o.statut);};
+const jourEvt=o=>{const v=verifInfo(o);if(!v.t)return '';const p=tzParts(v.t.getTime(),tzCmd(o));return p.year+'-'+pad2(p.month)+'-'+pad2(p.day);};
+function bilanJour(list){   // résultats du jour (heure du pays de chaque commande)
+  const b={L:0,R:0,N:0,P:0,D:0,montant:0,enCours:0,aVerif:0};
+  list.forEach(o=>{
+    if(aVerifier(o))b.aVerif++;
+    if(ST_CHEZ.includes(o.statut)&&o.dateLiv===jourZone(tzCmd(o)))b.enCours++;
+    const v=verifInfo(o);if(!v.type||jourEvt(o)!==jourZone(tzCmd(o)))return;
+    b[v.type]++;if(v.type==='L')b.montant+=o.prix*o.qte;
+  });
+  return b;
+}
+function bilanBandeau(b){
+  const c=(n,t,col)=>`<div style="flex:1;min-width:70px;background:var(--bg3);border-radius:var(--rs);padding:8px 6px;text-align:center"><div style="font-size:19px;font-weight:900;color:${col}">${n}</div><div style="font-size:10px;color:#888;margin-top:2px">${t}</div></div>`;
+  return `<div class="card" style="margin-bottom:12px"><div class="ch">📊 Ma journée <span style="font-size:11px;color:#888;font-weight:600">(${DRAP[TZ_DEFAUT]||''} ${fdate(jourZone(TZ_DEFAUT))})</span></div><div style="padding:10px 12px">
+    <div style="display:flex;gap:6px;flex-wrap:wrap">${c(b.L,'livrées','var(--gr)')}${c(b.R+b.N,'refusées / annulées','#FF8FAA')}${c(b.D,'reportées','#FF9B85')}${c(b.enCours,'encore en route','#7DB4FF')}</div>
+    <div style="text-align:center;margin-top:10px;font-size:13px">💰 Encaissé aujourd'hui : <b style="color:var(--gr)">${fmt(b.montant)}</b></div></div></div>`;
+}
+const VTYPE={L:['✅','Livrées','var(--gr)'],R:['❌','Refusées par le client','#FF8FAA'],N:['🚫','Annulées','#FF8FAA'],P:['📞','À rappeler (le livreur n\'a pas pu livrer)','#FF3333'],D:['📅','Reportées','#FF9B85']};
+function verifCard(o){
+  const v=verifInfo(o),id=esc(o.id);
+  const det=v.type==='L'?`💰 Encaissé : <b style="color:var(--gr)">${fmt(o.prix*o.qte)}</b>`:
+    v.type==='D'?`📅 Nouvelle date : <b>${o.dateLiv?esc(fdate(o.dateLiv))+(o.heureLiv?' à '+esc(o.heureLiv):''):'—'}</b>${o.reports?`<div style="font-size:11px;color:#888;margin-top:3px">${esc(String(o.reports).split(' ; ').pop())}</div>`:''}`:
+    `Motif : <b>${esc(o.motif)||'non précisé'}</b>`;
+  const actions=(v.type==='R'||v.type==='N'||v.type==='P')&&o.tel?`<a href="tel:${esc(o.tel)}" class="btn" style="flex:1;text-align:center;text-decoration:none">📞 Rappeler le client</a>${v.type!=='P'?`<button class="btn bs" style="flex:1" onclick="relancerLivraison('${id}')">🔄 Relancer la livraison</button>`:''}`:'';
+  return `<div class="cc" style="padding:12px 14px">
+    <div class="ct2"><div><div class="ci">${id}</div><div style="font-size:11px;color:#888">${v.t?ilya(v.t):''}${o.livreur?' · 🚚 '+esc(o.livreur):''}</div></div>${badge(o.statut)}</div>
+    <div style="font-size:13px;margin:4px 0">👤 <strong>${esc(o.client)}</strong> · 📦 ${esc(o.produit)} ×${o.qte}</div>
+    <div style="font-size:12px;color:#aaa;margin-bottom:8px">${det}</div>
+    <div class="arow" style="margin-top:6px">${actions}<button class="btn bp" style="flex:1 1 100%" onclick="marquerVu(['${id}'])">✓ Vu</button></div></div>`;
+}
+async function marquerVu(ids){
+  const t=new Date().toISOString();
+  ids.forEach(id=>{const o=orders.find(x=>x.id===id);if(o){const v=String(o.vu||'').replace(/^'/,'');if(v.startsWith('A|'))o.vu='V|'+v.slice(2)+'|'+t;}});
+  render();
+  const j=await api({action:'VU',ids:ids.join(',')}).catch(()=>null);
+  if(!j||!j.ok){toast('⚠️ Non enregistré — vérifie ta connexion',4000);return;}
+  toast(ids.length>1?`✓ ${ids.length} commandes archivées dans « Traitées »`:'✓ Archivée dans « Traitées »');
+}
+function rVerif(list){
+  const l=list.filter(aVerifier).sort((a,b)=>(verifInfo(b).t||0)-(verifInfo(a).t||0));
+  const grp=['P','R','N','D','L'].map(k=>[k,l.filter(o=>verifInfo(o).type===k)]).filter(x=>x[1].length);
+  return `${bilanBandeau(bilanJour(list))}
+  ${l.length===0?'<div class="empty">✓ Tout est vérifié. Les nouveaux résultats des livreurs apparaîtront ici.</div>':''}
+  ${grp.map(([k,os])=>`<div style="font-size:12px;font-weight:800;color:${VTYPE[k][2]};margin:14px 2px 6px;text-transform:uppercase">${VTYPE[k][0]} ${VTYPE[k][1]} (${os.length})</div>${os.map(verifCard).join('')}`).join('')}
+  ${l.length>1?`<button class="btn bp" style="width:100%;margin-top:8px;padding:13px" onclick="if(confirm('Archiver les ${l.length} commandes vérifiées dans « Traitées » ?'))marquerVu(${esc(JSON.stringify(l.map(o=>o.id)))})">✓ Tout marquer comme vu (${l.length})</button>`:''}`;
+}
+/* Onglet « Traitées » : groupé par jour, filtres et recherche */
+function libJour(d){if(!d)return 'Date inconnue';const a=jourZone(TZ_DEFAUT),h=jourZone(TZ_DEFAUT,-1);return d===a?'Aujourd\'hui':d===h?'Hier':fdate(d);}
+function rTraitees(done,carte){
+  const f=window._doneF||'tout',q=sansAccent(window._doneQ||'');
+  let l=done.filter(o=>f==='tout'||(f==='L'?o.statut==='Livrée ✓':f==='R'?o.statut==='Refusée':o.statut==='Annulée'));
+  if(q)l=l.filter(o=>sansAccent([o.client,o.tel,o.id,o.produit,o.quartier].join(' ')).includes(q));
+  const cle=o=>jourEvt(o)||String(o.date||'').slice(0,10);
+  l.sort((a,b)=>cle(b).localeCompare(cle(a)));
+  const groupes=[];l.forEach(o=>{const k=cle(o);let g=groupes.find(x=>x.k===k);if(!g)groupes.push(g={k,os:[]});g.os.push(o);});
+  const fb=(k,t)=>`<button class="btn bsm" style="flex:1;padding:6px 4px;${f===k?'background:var(--ac);color:#fff;border-color:var(--ac)':''}" onclick="window._doneF='${k}';render()">${t}</button>`;
+  return `<input type="search" placeholder="🔍 Client, téléphone, n° de commande…" value="${esc(window._doneQ||'')}" oninput="window._doneQ=this.value;clearTimeout(window._dq);window._dq=setTimeout(()=>{render();const i=document.querySelector('#main input[type=search]');if(i){i.focus();i.setSelectionRange(i.value.length,i.value.length);}},350)" style="width:100%;margin-bottom:8px">
+  <div style="display:flex;gap:6px;margin-bottom:10px">${fb('tout','Toutes')}${fb('L','✅ Livrées')}${fb('R','❌ Refusées')}${fb('N','🚫 Annulées')}</div>
+  ${l.length===0?'<div class="empty">Aucune commande</div>':''}
+  ${groupes.map(g=>`<div style="font-size:12px;font-weight:800;color:#888;margin:12px 2px 6px">📅 ${libJour(g.k)} · ${g.os.length}</div>${g.os.map(carte).join('')}`).join('')}`;
+}
 function rCloV0(){
   const moi=moiClo();
   const mesCmds=orders.filter(o=>o.closeur===moi);
   const act=mesCmds.filter(o=>ST_ACTIF.includes(o.statut));
   const chez=mesCmds.filter(o=>ST_CHEZ.includes(o.statut));
-  const done=mesCmds.filter(o=>ST_FIN.includes(o.statut));
+  const verif=mesCmds.filter(aVerifier);
+  const done=mesCmds.filter(o=>ST_FIN.includes(o.statut)&&!aVerifier(o));
   const rappel=mesCmds.filter(o=>o.statut==='À rappeler');
   const tab=window._cloTab||'active';
   const actV=triRetard(filtreRetard(act,'clo')),chezV=triRetard(filtreRetard(chez,'clo'));
-  const tb=(k,l,n,col,bg,bd)=>`<button onclick="window._cloTab='${k}';render()" style="flex:1;padding:9px 4px;border-radius:var(--rs);cursor:pointer;font-family:inherit;font-weight:700;font-size:12px;background:${tab===k?bg:'var(--bg3)'};color:${tab===k?col:'#555'};border:1px solid ${tab===k?bd:'var(--b2)'}">${l}${(k==='active'?act:k==='chez'?chez:[]).some(o=>retard(o))?' ⚠️':''} <span style="background:${k==='active'?'var(--re)':k==='chez'?'#3B82F6':'var(--gr)'};color:#fff;border-radius:20px;padding:1px 6px;font-size:10px;margin-left:2px">${n}</span></button>`;
+  const tb=(k,l,n,col,bg,bd)=>`<button onclick="window._cloTab='${k}';render()" style="flex:1;padding:9px 4px;border-radius:var(--rs);cursor:pointer;font-family:inherit;font-weight:700;font-size:12px;background:${tab===k?bg:'var(--bg3)'};color:${tab===k?col:'#555'};border:1px solid ${tab===k?bd:'var(--b2)'}">${l}${(k==='active'?act:k==='chez'?chez:[]).some(o=>retard(o))?' ⚠️':''} <span style="background:${k==='active'?'var(--re)':k==='chez'?'#3B82F6':k==='verif'?'#A855F7':'var(--gr)'};color:#fff;border-radius:20px;padding:1px 6px;font-size:10px;margin-left:2px">${n}</span></button>`;
   return `
   <div style="background:var(--bg2);border:1px solid var(--b);border-radius:var(--r);padding:14px;margin-bottom:12px;display:flex;gap:12px;align-items:center">
     <div style="width:42px;height:42px;background:rgba(180,83,9,.2);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">📞</div>
@@ -1160,9 +1240,10 @@ function rCloV0(){
     </div>`).join('')}
   </div>`:''}
   ${retardBanner([...act,...chez],'clo')}
-  <div style="display:flex;gap:6px;margin-bottom:12px">
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:12px">
     ${tb('active','📋 À traiter',act.length,'var(--am)','var(--am2)','rgba(255,181,71,.3)')}
     ${tb('chez','🚚 Chez le livreur',chez.length,'#7DB4FF','rgba(59,130,246,.15)','rgba(59,130,246,.4)')}
+    ${tb('verif','🔎 À vérifier',verif.length,'#C99BFF','rgba(168,85,247,.15)','rgba(168,85,247,.45)')}
     ${tb('done','✅ Traitées',done.length,'var(--gr)','var(--gr2)','rgba(0,200,150,.3)')}
   </div>
   ${tab==='active'?`
@@ -1171,9 +1252,8 @@ function rCloV0(){
   `:tab==='chez'?`
     ${chez.length===0?'<div class="empty">Aucune commande chez un livreur</div>':''}
     ${chezV.map(cloCard).join('')}
-  `:`
-    ${done.length===0?'<div class="empty">Aucune commande traitée pour le moment</div>':''}
-    ${done.map(o=>`<div class="cc">
+  `:tab==='verif'?rVerif(mesCmds):`
+    ${rTraitees(done,o=>`<div class="cc">
       <div class="ct2"><div><div class="ci">${esc(o.id)}</div><div style="font-size:10px;color:#555">${esc(o.date)}</div></div>${badge(o.statut)}</div>
       <div style="font-size:13px;margin-bottom:6px">👤 <strong>${esc(o.client)}</strong></div>
       <div style="font-size:12px;color:#666;margin-bottom:4px">📦 ${esc(o.produit)} ×${o.qte}</div>
@@ -1182,7 +1262,7 @@ function rCloV0(){
       ${o.motif?`<div style="background:var(--re2);border-radius:var(--rs);padding:8px 10px;font-size:11px;color:#FF8FAA;margin-top:6px">Motif : ${esc(o.motif)}</div>`:''}
       ${o.livreur?`<div style="font-size:12px;color:#555;margin-top:6px">🚚 Livreur : <strong style="color:var(--t)">${esc(o.livreur)}</strong>${o.coursier?` · 👤 ${esc(o.coursier)}`:''}</div>`:''}
       ${o.statut==='Annulée'?`<div class="arow"><button class="btn" style="flex:1" onclick="rouvrir('${esc(o.id)}')">↩ Rouvrir (le client a rappelé)</button></div>`:''}
-    </div>`).join('')}
+    </div>`)}
   `}
   `;}
 function rLivV0(){const moi=moiLiv();const act0=orders.filter(o=>o.livreur===moi&&!['Livrée ✓','Refusée','Annulée','À rappeler'].includes(o.statut));const act=triRetard(filtreRetard(act0,'liv'));return `<div style="background:var(--bg2);border:1px solid var(--b);border-radius:var(--r);padding:14px;margin-bottom:12px;display:flex;gap:12px;align-items:center"><div style="width:42px;height:42px;background:rgba(6,95,70,.3);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">🚚</div><div><div style="font-weight:800;font-size:15px">${esc(moi)||'Livreur'}</div><div style="font-size:11px;color:#555">${act0.length} livraison(s) en attente</div></div></div>${retardBanner(act0,'liv')}${act.length===0?'<div class="empty">✓ Aucune livraison en attente</div>':''}${act.map(o=>`<div class="cc${retard(o)?' late':''}"><div class="ct2"><strong>${esc(o.id)}</strong>${badge(o.statut)}</div>${retardTag(o)}<div style="font-size:13px;margin-bottom:6px">👤 <strong>${esc(o.client)}</strong></div><a href="tel:${esc(o.tel)}" class="ctel">📞 ${esc(o.tel)}</a><div style="font-size:12px;color:#666">📦 ${esc(o.produit)} ×${o.qte}</div>${isSoc()?coursierPick(o):''}
